@@ -45,7 +45,10 @@ const formatIssues = (zodError) =>
 export async function generateJson({ task, system, prompt, schema, mock, check, temperature = 0.2, maxRetries = 1 }) {
   if (env.AI_MOCK) {
     if (!mock) throw new Error(`No mock provided for AI task "${task}"`);
-    return schema.parse(mock());
+    const data = schema.parse(mock());
+    const problem = check?.(data); // mocks go through the same semantic checks as real output
+    if (problem) throw new AppError(502, `AI output failed validation for ${task}`, { reason: problem });
+    return data;
   }
 
   let currentPrompt = prompt;

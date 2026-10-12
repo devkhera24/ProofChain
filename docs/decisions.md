@@ -39,3 +39,7 @@
 | 2026-10-12 (step 18) | Near matches are extended to the end of the word | The best window can end mid-word; the UI must never show half a word as "the quote" |
 | 2026-10-12 (step 18) | Matching also unifies primes (′ ″) like `normalizeText` does | Keeps quote normalisation consistent with the canonical source text |
 | 2026-10-12 (step 18) | `lastName` handles "Last, First" (takes the part before the comma) | Otherwise "Smith, J." → "j" and same-paper records fail L2 with author_mismatch |
+| 2026-10-12 (step 19) | In mock mode, `generateJson` also runs `check()` on the mock output | Mocks are held to the same semantic checks as real output, so tests catch invalid IDs instead of crashing later |
+| 2026-10-12 (step 19) | When extraction finds a near-duplicate of an existing claim, the new passage is still linked to that claim | The second source is new evidence for the same claim; dropping it would lose provenance |
+| 2026-10-12 (step 19) | `POST /claims` returns 201 for a new claim and 200 with `merged: true` for a near-duplicate | Lets the client tell the user "this claim already exists as C2" |
+| 2026-10-12 (step 19) | `GET /claims/:id` returns links with `passage` and `source` objects (populated) instead of raw `passageId`/`sourceId` | Clearer client shape; the evidence panel needs passage text, page and source title/type |

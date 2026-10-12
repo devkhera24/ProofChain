@@ -23,6 +23,14 @@ describe("AI client in mock mode", () => {
     await expect(generateJson({ task: "bad", schema, mock: () => ({ ok: "yes" }) })).rejects.toThrow();
   });
 
+  it("generateJson runs the semantic check on mock output too", async () => {
+    const schema = z.object({ id: z.string() });
+    const check = (d) => (d.id === "P-1" ? null : `unknown IDs referenced: ${d.id}`);
+    expect(await generateJson({ task: "ok", schema, check, mock: () => ({ id: "P-1" }) })).toEqual({ id: "P-1" });
+    const err = await generateJson({ task: "bad", schema, check, mock: () => ({ id: "P-9" }) }).catch((e) => e);
+    expect(err).toMatchObject({ status: 502, details: { reason: "unknown IDs referenced: P-9" } });
+  });
+
   it("generateText returns the mock or a default", async () => {
     expect(await generateText({ prompt: "x", mock: () => "hello" })).toBe("hello");
     expect(await generateText({ prompt: "x" })).toBe("Mock response.");

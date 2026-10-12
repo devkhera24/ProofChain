@@ -10,6 +10,7 @@ import { classifySource } from "./classifySource.js";
 import { embedTexts } from "../ai/embeddings.js";
 import { reserveHumanIds } from "../../utils/ids.js";
 import { enqueue } from "../../jobs/runner.js";
+import { extractClaimsFromSource } from "../claims/claimService.js";
 import { emitToProject } from "../realtime/events.js"; // no-op stub until Step 29
 import { logger } from "../../utils/logger.js";
 
@@ -77,8 +78,8 @@ export async function ingestSource(sourceId) {
     await source.save();
     emitToProject(source.projectId, "source.updated", { sourceId: source.id, status: "ready" });
 
-    // 6. Follow-ups (implemented in later steps)
-    // await scheduleClaimExtraction(source)      ← Step 19
+    // 6. Follow-ups
+    enqueue(`claims:${source.id}`, () => extractClaimsFromSource(source._id));
     // await refreshProfileFromSources(project)   ← Step 23
   } catch (err) {
     logger.warn({ err: err.message, sourceId }, "ingestion failed");
