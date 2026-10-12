@@ -2,6 +2,7 @@ import { EvidenceLink } from "../../models/EvidenceLink.js";
 import { recomputeClaimStatus } from "./claimStatus.js";
 import { recordAudit } from "../audit/auditService.js";
 import { emitToProject } from "../realtime/events.js";
+import { addComment, resolveThread } from "../comments/commentService.js";
 import { AppError } from "../../utils/errors.js";
 
 export const TRANSITIONS = {
@@ -16,6 +17,8 @@ export const TRANSITIONS = {
  * Human review (L6). Changes status and/or stance/scope, audits the change, recomputes the claim status.
  * Editing stance/scope alone also marks the link reviewed (it leaves `ai_suggested`, so the linker never
  * overwrites a human's edit).
+ * Disputes are discussed in the link's comment thread: the dispute reason opens it, and resolving the dispute
+ * (→ confirmed/rejected, reason required) posts the resolution and closes the thread.
  */
 export async function reviewLink({ link, user, status, stance, scope, reason }) {
   const from = { status: link.status, stance: link.stance, scope: link.scope ?? null };
@@ -29,11 +32,12 @@ export async function reviewLink({ link, user, status, stance, scope, reason }) 
   }
   if (to === link.status && !stanceChanged && !scopeChanged) return { link, changed: false };
 
-  const needsReason = ["rejected", "disputed"].includes(to) && to !== link.status;
+  const resolvesDispute = link.status === "disputed" && ["confirmed", "rejected"].includes(to);
+  const needsReason = (["rejected", "disputed"].includes(to) && to !== link.status) || resolvesDispute;
   if ((needsReason || (stanceChanged && link.origin === "ai")) && !reason?.trim()) {
     throw new AppError(400, "A reason is required for this change", {
       field: "reason",
-      why: needsReason ? `moving to ${to}` : "changing the stance of an AI suggestion",
+      why: resolvesDispute ? "resolving a dispute" : needsReason ? `moving to ${to}` : "changing the stance of an AI suggestion",
     });
   }
 
@@ -58,6 +62,13 @@ export async function reviewLink({ link, user, status, stance, scope, reason }) 
     change,
     reason: reason?.trim() || undefined,
   });
+  const thread = { kind: "link", id: link._id, humanId: link.humanId };
+  if (to === "disputed" && from.status !== "disputed") {
+    await addComment({ projectId: link.projectId, target: thread, user, text: `Disputed: ${reason.trim()}` });
+  } else if (resolvesDispute) {
+    await resolveThread(link.projectId, thread);
+    await addComment({ projectId: link.projectId, target: thread, user, text: `Resolved as ${to}: ${reason.trim()}`, resolved: true });
+  }
   await recomputeClaimStatus(link.claimId);
   emitToProject(link.projectId, "link.updated", { linkId: link.id, claimId: String(link.claimId) });
   return { link, changed: true };

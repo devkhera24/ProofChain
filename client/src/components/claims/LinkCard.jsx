@@ -10,9 +10,10 @@ import { toApiError } from "../../api/client.js";
 import ReasonDialog from "../common/ReasonDialog.jsx";
 import Button from "../ui/Button.jsx";
 import Chip from "../ui/Chip.jsx";
+import CommentThread, { useCommentCounts } from "../comments/CommentThread.jsx";
 
 const ACTIONS = {
-  confirm: { label: "Confirm", to: "confirmed" },
+  confirm: { label: "Confirm", to: "confirmed", reason: "Confirm this evidence" },
   reject: { label: "Reject", to: "rejected", reason: "Reject this evidence" },
   stance: { label: "Change stance", reason: "Change the stance" },
   dispute: { label: "Dispute", to: "disputed", reason: "Dispute this evidence" },
@@ -21,6 +22,8 @@ const ACTIONS = {
 /** One piece of evidence: the real quote, where it comes from, how it was matched, and review actions. */
 export default function LinkCard({ projectId, link, canReview, showClaim = false }) {
   const review = useReviewLink(projectId);
+  const commentCounts = useCommentCounts(projectId, "link");
+  const disputed = link.status === "disputed";
   const [dialog, setDialog] = useState(null); // key of ACTIONS
   const stance = STANCE[link.stance];
   const status = LINK_STATUS[link.status];
@@ -82,7 +85,7 @@ export default function LinkCard({ projectId, link, canReview, showClaim = false
           Open in source →
         </Link>
         {canReview && allowed.includes("confirmed") && (
-          <Button size="sm" icon={Check} className="text-supports hover:bg-supports/10" loading={review.isPending && review.variables?.status === "confirmed"} disabled={review.isPending} onClick={() => run({ status: "confirmed" }).catch(() => {})}>
+          <Button size="sm" icon={Check} className="text-supports hover:bg-supports/10" loading={review.isPending && review.variables?.status === "confirmed"} disabled={review.isPending} onClick={() => (disputed ? setDialog("confirm") : run({ status: "confirmed" }).catch(() => {}))}>
             {ACTIONS.confirm.label}
           </Button>
         )}
@@ -104,11 +107,28 @@ export default function LinkCard({ projectId, link, canReview, showClaim = false
       </div>
       {review.error && !dialog && <p className="mt-1 text-xs text-red-700">{toApiError(review.error).message}</p>}
 
+      <CommentThread
+        projectId={projectId}
+        targetKind="link"
+        targetId={link.id}
+        canComment={canReview}
+        count={commentCounts[link.id]}
+        autoOpen={disputed}
+      />
+
       <AnimatePresence>
       {dialog && (
         <ReasonDialog
           title={`${ACTIONS[dialog].reason} (${link.humanId})`}
-          description={dialog === "stance" ? "The AI's label is kept in the history." : "Your reason is saved in the audit history."}
+          description={
+            dialog === "stance"
+              ? "The AI's label is kept in the history."
+              : disputed && ["confirm", "reject"].includes(dialog)
+                ? "This resolves the dispute. Your reason is posted to the discussion and saved in the audit history."
+                : dialog === "dispute"
+                  ? "Your reason starts a discussion on this evidence and is saved in the audit history."
+                  : "Your reason is saved in the audit history."
+          }
           confirmLabel={ACTIONS[dialog].label}
           withStance={dialog === "stance"}
           currentStance={link.stance}

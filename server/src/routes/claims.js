@@ -76,7 +76,7 @@ claimsRouter.post("/", requireProjectRole("editor"), aiLimiter, validate({ body:
     actorName: req.user.name,
   });
   if (!merged) {
-    emitToProject(req.project._id, "claims.updated", { claimId: claim.id });
+    emitToProject(req.project._id, "claim.updated", { claimId: claim.id });
     scheduleLinking(claim._id);
   }
   res.status(merged ? 200 : 201).json({ claim, merged });
@@ -118,7 +118,7 @@ claimsRouter.patch(
       await claim.save();
       await recordAudit({ ...actor(req), action: "claim.updated", target: target(claim), change, reason });
       if (change.text) scheduleLinking(claim._id); // new wording → look for evidence again
-      emitToProject(req.project._id, "claims.updated", { claimId: claim.id });
+      emitToProject(req.project._id, "claim.updated", { claimId: claim.id });
     }
     res.json({ claim });
   },
@@ -134,7 +134,7 @@ claimsRouter.delete("/:claimId", requireProjectRole("editor"), validate({ params
     target: target(claim),
     change: { text: [claim.text, null], links: [deletedCount, 0] },
   });
-  emitToProject(req.project._id, "claims.updated", { claimId: claim.id, deleted: true });
+  emitToProject(req.project._id, "claim.updated", { claimId: claim.id, deleted: true });
   res.status(204).end();
 });
 

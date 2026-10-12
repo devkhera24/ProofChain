@@ -8,6 +8,7 @@ import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
 import { NEEDS_REVIEW } from "../../lib/evidence.js";
 import StateMessage from "../common/StateMessage.jsx";
+import { useFallbackPoll } from "../../context/SocketContext.jsx";
 import { ClaimStatus, StanceCounts, GapBadges } from "./ClaimBits.jsx";
 import Button from "../ui/Button.jsx";
 import Tabs from "../ui/Tabs.jsx";
@@ -73,11 +74,12 @@ export default function ClaimsList() {
   const { data: project } = useProject(projectId);
   const canEdit = ["editor", "owner"].includes(project?.role);
   const [filter, setFilter] = useState("all");
+  const poll = useFallbackPoll();
   const { data: claims, isPending, error, refetch } = useQuery({
     queryKey: ["claims", projectId],
     queryFn: () => claimsApi.list(projectId),
-    // Step 29 replaces polling with socket events
-    refetchInterval: (q) => (q.state.data?.some((c) => Date.now() - new Date(c.createdAt) < RECENT_MS) ? 4000 : false),
+    // Live updates come from `claim.updated`/`link.updated`; poll only while the socket is down
+    refetchInterval: (q) => poll(q.state.data?.some((c) => Date.now() - new Date(c.createdAt) < RECENT_MS)),
   });
 
   const shown = claims?.filter(FILTERS[filter].test) ?? [];

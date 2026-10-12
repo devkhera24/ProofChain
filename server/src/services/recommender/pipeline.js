@@ -153,7 +153,9 @@ async function prepare({ project, userId, question, log }) {
 /** Create the batch row (status "running") so callers get its id before the work starts. */
 export async function createBatch({ projectId, userId, trigger, triggerText }) {
   const humanId = await nextHumanId(projectId, "batch");
-  return RecommendationBatch.create({ projectId, userId, humanId, trigger, triggerText, status: "running" });
+  const batch = await RecommendationBatch.create({ projectId, userId, humanId, trigger, triggerText, status: "running" });
+  emitToProject(projectId, "batch.updated", { batchId: batch.id, userId: String(userId), status: "running" });
+  return batch;
 }
 
 export async function runRecommendation({ projectId, userId, trigger, triggerText, batchId }) {
@@ -184,7 +186,7 @@ export async function runRecommendation({ projectId, userId, trigger, triggerTex
   } finally {
     batch.pipelineLog = log.lines;
     await batch.save();
-    emitToProject(projectId, "batch.ready", { batchId: batch.id, status: batch.status });
+    emitToProject(projectId, "batch.ready", { batchId: batch.id, userId: String(batch.userId), status: batch.status });
   }
   return batch;
 }

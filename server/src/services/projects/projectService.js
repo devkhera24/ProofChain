@@ -1,6 +1,7 @@
 import { Project } from "../../models/Project.js";
 import { User } from "../../models/User.js";
 import { AppError, notFoundError } from "../../utils/errors.js";
+import { removeUserFromProject } from "../realtime/events.js";
 import { ensureProfile, scheduleProfileRefresh, scheduleProjectProfiles } from "../profile/profileService.js";
 
 const roleOf = (project, userId) => project.members.find((m) => m.userId.equals(userId))?.role ?? null;
@@ -63,5 +64,6 @@ export async function removeMember(project, userId) {
   if (member.role === "owner" && owners.length === 1) throw new AppError(400, "A project must keep at least one owner");
   project.members = project.members.filter((m) => m !== member);
   await project.save();
+  await removeUserFromProject(project._id, userId);
   return withMembers(project);
 }

@@ -157,6 +157,6 @@ sourcesRouter.delete("/:sourceId", requireProjectRole("editor"), validate({ para
     target: target(source),
     change: { passages: [passages.deletedCount, 0], links: [links.deletedCount, 0] },
   });
-  emitToProject(source.projectId, "source.deleted", { sourceId: source.id });
+  emitToProject(source.projectId, "source.updated", { sourceId: source.id, deleted: true });
   res.status(204).end();
 });

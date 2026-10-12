@@ -11,6 +11,7 @@ import RightPanel from "../components/recommendations/RightPanel.jsx";
 import PipelineLogView from "../components/review/PipelineLogView.jsx";
 import ChatPanel from "../components/chat/ChatPanel.jsx";
 import { lazy, Suspense } from "react";
+import { useProjectEvents } from "../hooks/useProjectEvents.js";
 import Spinner from "../components/common/Spinner.jsx";
 
 // Cytoscape is large: load the Graph tab only when it is opened
@@ -32,6 +33,7 @@ export default function WorkspacePage() {
   const { projectId } = useParams();
   const { data, isPending, error } = useProject(projectId);
   const queue = useQuery({ ...reviewQueueQuery(projectId), enabled: !!data });
+  const { presence } = useProjectEvents(data ? projectId : null); // join the room only once membership is confirmed
 
   if (isPending) return <StateMessage kind="loading" title="Opening project…" />;
   if (error) {
@@ -61,6 +63,7 @@ export default function WorkspacePage() {
       right={<RightPanel />}
       views={views}
       badges={{ review: queue.data?.length }}
+      presence={presence}
     />
   );
 }

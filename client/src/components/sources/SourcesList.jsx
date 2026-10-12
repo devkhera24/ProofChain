@@ -10,6 +10,7 @@ import { sourcesApi } from "../../api/sources.js";
 import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
 import StateMessage from "../common/StateMessage.jsx";
+import { useFallbackPoll } from "../../context/SocketContext.jsx";
 import AddSourceDialog from "./AddSourceDialog.jsx";
 import SourceRow from "./SourceRow.jsx";
 
@@ -20,11 +21,12 @@ export default function SourcesList() {
   const { data: project } = useProject(projectId);
   const canEdit = ["editor", "owner"].includes(project?.role);
   const [adding, setAdding] = useState(false);
+  const poll = useFallbackPoll();
   const { data: sources, isPending, error, refetch } = useQuery({
     queryKey: ["sources", projectId],
     queryFn: () => sourcesApi.list(projectId),
-    // Step 29 replaces polling with socket events
-    refetchInterval: (q) => (q.state.data?.some(isBusy) ? 3000 : false),
+    // Live updates come from `source.updated`; poll only while the socket is down
+    refetchInterval: (q) => poll(q.state.data?.some(isBusy)),
   });
 
   const addButton = canEdit && (

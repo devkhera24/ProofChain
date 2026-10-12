@@ -6,6 +6,7 @@ import { MotionConfig } from "motion/react";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/Toast.jsx";
+import { SocketProvider } from "./context/SocketContext.jsx";
 import "./styles/index.css";
 
 const queryClient = new QueryClient({
@@ -18,11 +19,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </BrowserRouter>
+          <SocketProvider>
+            <BrowserRouter>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </BrowserRouter>
+          </SocketProvider>
         </AuthProvider>
       </QueryClientProvider>
     </MotionConfig>

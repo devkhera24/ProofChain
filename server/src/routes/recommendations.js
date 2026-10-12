@@ -64,7 +64,7 @@ recommendationsRouter.post(
       user: req.user,
       ...req.valid.body,
     });
-    emitToProject(req.project._id, "batch.updated", { batchId: saved.id });
+    emitToProject(req.project._id, "batch.updated", { batchId: saved.id, userId: req.user.id });
     res.json({ batch: saved, item, rule: rule ?? null, source: source ?? null, replaced: replaced ?? null, note: note ?? null });
   },
 );

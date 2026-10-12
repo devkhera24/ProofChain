@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { FileText, Inbox, ListChecks, Network, ScrollText } from "lucide-react";
 import clsx from "clsx";
 import Tabs from "../ui/Tabs.jsx";
+import Presence from "./Presence.jsx";
 import { page, spring } from "../../lib/motion.js";
 
 const TABS = [
@@ -19,7 +20,7 @@ const PANELS = [
   { key: "right", label: "Recommendations" },
 ];
 
-export default function WorkspaceLayout({ project, role, left, right, views, badges = {} }) {
+export default function WorkspaceLayout({ project, role, left, right, views, badges = {}, presence = [] }) {
   const [panel, setPanel] = useState("center"); // which panel is visible below `lg`
   const { pathname } = useLocation();
 
@@ -28,7 +29,8 @@ export default function WorkspaceLayout({ project, role, left, right, views, bad
       <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-2">
         <h1 className="truncate font-semibold tracking-tight text-navy">{project.name}</h1>
         <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-xs capitalize text-muted">{role}</span>
-        {/* presence (Step 29) · export (Step 30) */}
+        <Presence users={presence} />
+        {/* export (Step 30) */}
       </div>
 
       <Tabs variant="underline" fill className="bg-white lg:hidden" layoutId="mobile-panel" label="Panels" value={panel} onChange={setPanel} items={PANELS} />

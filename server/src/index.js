@@ -5,12 +5,13 @@ import { createApp } from "./app.js";
 import { logger } from "./utils/logger.js";
 import { resumeInterruptedJobs } from "./services/ingestion/pipeline.js";
 import { failInterruptedBatches } from "./services/recommender/pipeline.js";
+import { initSockets } from "./sockets/index.js";
 
 async function main() {
   await connectDb();
   const app = createApp();
   const server = http.createServer(app);
-  // Step 29 attaches Socket.io here: initSockets(server)
+  const io = initSockets(server);
 
   server.listen(env.PORT, "0.0.0.0", () => logger.info(`API listening on :${env.PORT} (${env.NODE_ENV})`));
   await resumeInterruptedJobs(); // jobs interrupted by a Render restart/sleep
@@ -18,6 +19,7 @@ async function main() {
 
   const shutdown = async (signal) => {
     logger.info(`${signal} received, shutting down`);
+    io.close(); // also closes the HTTP server
     server.close(async () => {
       await disconnectDb().catch(() => {});
       process.exit(0);

@@ -12,6 +12,7 @@ export function useReviewLink(projectId) {
       qc.invalidateQueries({ queryKey: ["graph", projectId] });
       qc.invalidateQueries({ queryKey: ["claim", projectId, link.claim?.id] });
       qc.invalidateQueries({ queryKey: ["claim-history", projectId, link.claim?.id] });
+      qc.invalidateQueries({ queryKey: ["comments", projectId] }); // disputes and their resolutions post to the thread
     },
   });
 }

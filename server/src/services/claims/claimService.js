@@ -129,7 +129,7 @@ export async function extractClaimsFromSource(sourceId) {
 
   log.info("done", { created: result.created.length, merged: result.merged.length, dropped: result.dropped });
   logger.info({ sourceId, lines: log.lines }, "claim extraction finished");
-  if (result.created.length || result.merged.length) emitToProject(projectId, "claims.updated", { sourceId: String(sourceId) });
+  if (result.created.length || result.merged.length) emitToProject(projectId, "claim.updated", { sourceId: String(sourceId) });
   for (const claim of [...result.created, ...result.merged]) await recomputeClaimStatus(claim._id);
   for (const claim of result.created) scheduleLinking(claim._id);
   return result;

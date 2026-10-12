@@ -13,6 +13,8 @@ import { useProject } from "../../hooks/useProject.js";
 import { STANCE, STANCE_ORDER } from "../../lib/evidence.js";
 import { timeAgo } from "../../lib/format.js";
 import StateMessage from "../common/StateMessage.jsx";
+import { useFallbackPoll } from "../../context/SocketContext.jsx";
+import CommentThread, { useCommentCounts } from "../comments/CommentThread.jsx";
 import ReasonDialog from "../common/ReasonDialog.jsx";
 import LinkCard from "./LinkCard.jsx";
 import { ClaimStatus, GapBadges } from "./ClaimBits.jsx";
@@ -111,10 +113,12 @@ export default function ClaimDetail() {
   const qc = useQueryClient();
   const { data: project } = useProject(projectId);
   const canEdit = ["editor", "owner"].includes(project?.role);
+  const poll = useFallbackPoll();
+  const claimCommentCounts = useCommentCounts(projectId, "claim");
   const { data, isPending, error } = useQuery({
     queryKey: ["claim", projectId, claimId],
     queryFn: () => claimsApi.get(projectId, claimId),
-    refetchInterval: (q) => (q.state.data && !q.state.data.links.length ? 4000 : false), // evidence may still be arriving
+    refetchInterval: (q) => poll(q.state.data && !q.state.data.links.length), // evidence may still be arriving
   });
   const relink = useMutation({ mutationFn: () => linksApi.runLinking(projectId, claimId) });
   const remove = useMutation({
@@ -180,6 +184,7 @@ export default function ClaimDetail() {
         </div>
         <EditableText key={claim.text} projectId={projectId} claim={claim} canEdit={canEdit} />
         {claim.scopeNote && <p className="text-sm text-muted">Scope: {claim.scopeNote}</p>}
+        <CommentThread projectId={projectId} targetKind="claim" targetId={claim.id} canComment={canEdit} count={claimCommentCounts[claim.id]} />
       </header>
 
       {!links.length ? (
