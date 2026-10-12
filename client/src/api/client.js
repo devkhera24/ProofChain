@@ -20,3 +20,27 @@ export function toApiError(err) {
   if (err.code === "ECONNABORTED") return { status: 0, message: "The server took too long to respond." };
   return { status: 0, message: "Cannot reach the server. Check your connection." };
 }
+
+const TOKEN_KEY = "proofchain.token";
+export const tokenStore = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (t) => localStorage.setItem(TOKEN_KEY, t),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
+};
+
+api.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+let onUnauthorized = () => {};
+export const setUnauthorizedHandler = (fn) => (onUnauthorized = fn);
+
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err.response?.status === 401 && !err.config.url.startsWith("/auth/")) onUnauthorized();
+    return Promise.reject(err);
+  },
+);

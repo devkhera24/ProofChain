@@ -10,3 +10,6 @@
 | 2026-10-11 (step 4) | Pinned React Router to v7 (npm defaulted to v8) | Guide §0.6 pre-approves React Router v7 |
 | 2026-10-11 (step 4) | Component classes (`card`, `btn`, `input`…) declared with `@utility` instead of `@layer components` | Tailwind v4 can't `@apply` a class defined in `@layer components` (`btn-primary` applies `btn`) |
 | 2026-10-12 (step 7) | `aiLimiter` key falls back to `ipKeyGenerator(req.ip)` instead of raw `req.ip` | express-rate-limit v8 rejects custom key generators that return raw IPs (IPv6 users could bypass the limit by rotating addresses); the helper groups IPv6 by subnet |
+| 2026-10-12 (step 8) | Auth token stored in `localStorage` | Simple across the Vercel/Render domains; XSS exposure is limited by never rendering user HTML (`dangerouslySetInnerHTML` is banned) |
+| 2026-10-12 (step 8) | Startup `/auth/me` only logs out on 401, not on any error | Guide used `.catch(logout)`; a cold-start timeout or network error would otherwise wipe a valid token |
+| 2026-10-12 (step 8) | Login/register pages redirect to the app if already logged in | Avoids showing the form to a signed-in user |
