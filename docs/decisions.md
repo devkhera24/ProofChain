@@ -65,3 +65,9 @@
 | 2026-10-12 (step 23) | `addFeedbackRule` dedupes rules by concept and never weakens an existing rule automatically | Repeated "not relevant" feedback for the same reason shouldn't pile up duplicate exclusions |
 | 2026-10-12 (step 23) | `detectGaps` ignores links whose source no longer exists | Defensive: a deleted source isn't evidence |
 | 2026-10-12 (step 23) | Test DB helper drains background jobs before clearing collections | Jobs started by one test must not write into the next test's data |
+| 2026-10-12 (step 24) | L1/L2 verification runs on the scored shortlist (around the top 15), not on all 100–200 candidates | Saves API quota; unverified papers still can never reach the user (guide §24) |
+| 2026-10-12 (step 24) | Snowballing seeds on paper sources with any id (DOI / S2 / OpenAlex) via `getReferences`/`getCitations` (S2 → OpenAlex fallback) | Works without an S2 key; the guide only used S2 ids |
+| 2026-10-12 (step 24) | `seenEmbeddings` = first-passage embeddings of the project's paper sources | The guide doesn't define it; this penalises near-duplicates of papers already added (e.g. a preprint of a published paper) |
+| 2026-10-12 (step 24) | Pre-sort before embedding uses best search rank, then citations/year; pool capped at 60 | Controls embedding cost (guide §24.4) |
+| 2026-10-12 (step 24) | Filters match feedback/sources on every id form (doi/arxiv/s2/oa) and on normalised title | A paper may come back from search without the id it was first stored under |
+| 2026-10-12 (step 24) | Test setup blocks `fetch` to any non-local host | Enforces "tests never hit real external APIs"; caught a snowballing call leaking to S2/OpenAlex |

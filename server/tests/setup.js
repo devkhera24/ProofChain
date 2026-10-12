@@ -4,3 +4,11 @@ process.env.JWT_SECRET = "test-secret-test-secret-test-secret-123456";
 process.env.AI_MOCK = "true";
 process.env.VECTOR_SEARCH_MODE = "memory";
 process.env.CORS_ORIGINS = "http://localhost:5173";
+
+// Tests never hit real external APIs (CLAUDE.md rule 5). Mock fetch (vi.spyOn / vi.mock) where a test needs it.
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (input, init) => {
+  const { hostname } = new URL(typeof input === "string" ? input : input.url ?? String(input));
+  if (["127.0.0.1", "localhost", "::1"].includes(hostname)) return realFetch(input, init);
+  throw new Error(`Tests must not call external APIs (attempted: ${hostname})`);
+};
