@@ -13,6 +13,7 @@ import { enqueue } from "../../jobs/runner.js";
 import { extractClaimsFromSource } from "../claims/claimService.js";
 import { scheduleLinking } from "../evidence/linker.js";
 import { Claim } from "../../models/Claim.js";
+import { scheduleProjectProfiles } from "../profile/profileService.js";
 import { emitToProject } from "../realtime/events.js"; // no-op stub until Step 29
 import { logger } from "../../utils/logger.js";
 
@@ -85,7 +86,7 @@ export async function ingestSource(sourceId) {
     const existingClaims = await Claim.find({ projectId: source.projectId }).select("_id").lean();
     existingClaims.forEach((c) => scheduleLinking(c._id, { sourceIds: [String(source._id)] }));
     enqueue(`claims:${source.id}`, () => extractClaimsFromSource(source._id));
-    // await refreshProfileFromSources(project)   ← Step 23
+    await scheduleProjectProfiles(source.projectId); // new passages shift every member's interest profile
   } catch (err) {
     logger.warn({ err: err.message, sourceId }, "ingestion failed");
     if (!(await Source.exists({ _id: source._id }))) return; // deleted while processing

@@ -59,3 +59,9 @@
 | 2026-10-12 (step 22) | `mergePapers` matches on any shared identity (DOI, arXiv id, or title + first author) | The guide's single key couldn't merge an S2 record without a DOI with the OpenAlex record of the same paper that has one |
 | 2026-10-12 (step 22) | `verifyPaper` can also resolve via OpenAlex work id, and skips S2 checks during the cooldown | Papers without a DOI from S2 still get a second independent source when possible |
 | 2026-10-12 (step 22) | Retry waits are capped at 30 s; Crossref abstracts have JATS tags stripped | A large `Retry-After` shouldn't block a job; abstracts are shown as plain text |
+| 2026-10-12 (step 23) | Profile recomputes use `enqueueCoalesced` (re-run once if requested mid-run) instead of plain key dedupe | Plain dedupe drops a request that arrives while the job runs (e.g. a second source finishing), leaving a stale profile |
+| 2026-10-12 (step 23) | Profiles are recomputed for every member when a source becomes ready or topics/level change; created for the creator and for added members | Profiles are per (project, user); sources and topics are shared by all members |
+| 2026-10-12 (step 23) | `PATCH /profile` takes `{ exclusion: { id, strength } }` or `{ removeExclusion: id }` and is audited (`profile.exclusion`) | The guide leaves the body open; changes to what gets filtered out of recommendations should be traceable |
+| 2026-10-12 (step 23) | `addFeedbackRule` dedupes rules by concept and never weakens an existing rule automatically | Repeated "not relevant" feedback for the same reason shouldn't pile up duplicate exclusions |
+| 2026-10-12 (step 23) | `detectGaps` ignores links whose source no longer exists | Defensive: a deleted source isn't evidence |
+| 2026-10-12 (step 23) | Test DB helper drains background jobs before clearing collections | Jobs started by one test must not write into the next test's data |

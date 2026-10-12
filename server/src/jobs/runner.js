@@ -22,6 +22,25 @@ export function enqueue(key, fn) {
   return p;
 }
 
+const dirty = new Set();
+
+/**
+ * Like enqueue, but a request that arrives while the job is running isn't dropped: the job runs once
+ * more afterwards (several requests during one run collapse into a single re-run). Use for recomputes.
+ */
+export function enqueueCoalesced(key, fn) {
+  if (running.has(key)) {
+    dirty.add(key);
+    return running.get(key);
+  }
+  return enqueue(key, async () => {
+    do {
+      dirty.delete(key);
+      await fn();
+    } while (dirty.has(key));
+  });
+}
+
 export const isRunning = (key) => running.has(key);
 /** For tests: wait until all jobs have finished (including jobs enqueued by jobs). */
 export async function drain() {

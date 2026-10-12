@@ -1,6 +1,7 @@
 import { Project } from "../../models/Project.js";
 import { User } from "../../models/User.js";
 import { AppError, notFoundError } from "../../utils/errors.js";
+import { ensureProfile, scheduleProfileRefresh, scheduleProjectProfiles } from "../profile/profileService.js";
 
 const roleOf = (project, userId) => project.members.find((m) => m.userId.equals(userId))?.role ?? null;
 
@@ -23,7 +24,8 @@ export async function listProjects(user) {
 
 export async function createProject(user, data) {
   const project = await Project.create({ ...data, members: [{ userId: user._id, role: "owner" }] });
-  // Step 23: also create the project's interest profile here
+  await ensureProfile(project._id, user._id);
+  scheduleProfileRefresh(project._id, user._id); // topics → initial profile vector
   return withMembers(project);
 }
 
@@ -32,8 +34,11 @@ export async function getProject(project) {
 }
 
 export async function updateProject(project, data) {
+  const profileChanged =
+    (data.topics && data.topics.join("\n") !== project.topics.join("\n")) || (data.level && data.level !== project.level);
   project.set(data);
   await project.save();
+  if (profileChanged) await scheduleProjectProfiles(project._id);
   return withMembers(project);
 }
 
@@ -44,6 +49,10 @@ export async function addMember(project, { email, role }) {
   if (existing) existing.role = role;
   else project.members.push({ userId: user._id, role });
   await project.save();
+  if (!existing) {
+    await ensureProfile(project._id, user._id);
+    scheduleProfileRefresh(project._id, user._id);
+  }
   return withMembers(project);
 }
 
