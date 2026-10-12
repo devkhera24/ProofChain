@@ -10,6 +10,7 @@ import ReviewQueue, { reviewQueueQuery } from "../components/review/ReviewQueue.
 import { useQuery } from "@tanstack/react-query";
 import RightPanel from "../components/recommendations/RightPanel.jsx";
 import PipelineLogView from "../components/review/PipelineLogView.jsx";
+import ChatPanel from "../components/chat/ChatPanel.jsx";
 
 const views = {
   graph: <Placeholder title="Evidence graph — Step 28" />,
@@ -48,7 +49,7 @@ export default function WorkspacePage() {
     <WorkspaceLayout
       project={data.project}
       role={data.role}
-      left={<Placeholder title="Chat — Step 27" />}
+      left={<ChatPanel />}
       right={<RightPanel />}
       views={views}
       badges={{ review: queue.data?.length }}

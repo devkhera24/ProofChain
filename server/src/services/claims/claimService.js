@@ -19,10 +19,15 @@ const DUPLICATE_THRESHOLD = 0.9;
 const MAX_PASSAGES = 30;
 
 /** Create a claim, or return the existing near-duplicate. */
-export async function createOrMergeClaim({ projectId, text, scopeNote, origin, userId, actorName, embedding }) {
+export async function createOrMergeClaim({ projectId, text, scopeNote, origin, userId, actorName, embedding, threshold = DUPLICATE_THRESHOLD }) {
   embedding ??= await embedOne(text, "SEMANTIC_SIMILARITY");
   const existing = await Claim.find({ projectId }).select("+embedding");
-  const dup = existing.find((c) => c.embedding?.length && cosine(c.embedding, embedding) >= DUPLICATE_THRESHOLD);
+  let dup = null;
+  let best = threshold;
+  for (const c of existing) {
+    const sim = c.embedding?.length ? cosine(c.embedding, embedding) : 0;
+    if (sim >= best) [dup, best] = [c, sim]; // the closest match, not just the first one over the bar
+  }
   if (dup) return { claim: dup, merged: true };
   const humanId = await nextHumanId(projectId, "claim");
   const claim = await Claim.create({ projectId, humanId, text, scopeNote, origin, createdBy: userId, embedding });

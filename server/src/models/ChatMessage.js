@@ -10,7 +10,9 @@ const chatSchema = new Schema(
     userId: { type: ObjectId, ref: "User" },
     role: { type: String, enum: ["user", "agent", "system"], required: true },
     content: { type: String, required: true },
-    citations: [{ passageId: ObjectId, humanId: String, sourceId: ObjectId, quote: String, matchType: String }],
+    citations: [
+      new Schema({ passageId: ObjectId, humanId: String, sourceId: ObjectId, quote: String, matchType: String }, { _id: false }),
+    ],
     meta: Schema.Types.Mixed, // { intent, claimId, batchId, validation: {...} }
   },
   { timestamps: true },

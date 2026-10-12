@@ -83,3 +83,9 @@
 | 2026-10-12 (step 26) | "Not relevant" reason is optional in the UI; without one, no exclusion rule is created (the card is still replaced) | A rule needs a reason to be meaningful; forcing one adds friction |
 | 2026-10-12 (step 26) | Level is editable in the Profile tab (saved via project PATCH like topics) | The guide lists level in the profile; both feed the profile vector |
 | 2026-10-12 (step 26) | Pipeline log lines are tinted by kind (drop red, pass green, retry amber) with a legend for L1–L4 and pass/drop counts | The guide calls this the demo's "trust moment"; the legend makes the layers readable to non-developers |
+| 2026-10-12 (step 27) | `createOrMergeClaim` takes a `threshold` (0.9 default, 0.85 for questions) and merges into the *closest* claim | The guide maps questions at ≥ 0.85; the first-over-threshold match could pick a less similar claim |
+| 2026-10-12 (step 27) | `shouldTriggerRecommendation` = every 2nd question by the same user, and only if no batch is running | The guide leaves it open ("e.g. every 2nd question"); avoids flooding Gemini/search quotas |
+| 2026-10-12 (step 27) | A question in a project with no passages skips the answer call and asks the user to add sources (the claim is still tracked) | Nothing to ground an answer in; saves a Gemini call |
+| 2026-10-12 (step 27) | Removed `[P-x]` markers are tidied (no space before punctuation); the sentence itself stays | Matches the guide (only the marker is removed) while keeping the prose readable |
+| 2026-10-12 (step 27) | The intent mock uses keyword rules (recommend / claim: / greetings / otherwise question) | Lets tests exercise every branch of the orchestrator |
+| 2026-10-12 (step 27) | Chat history is paginated with `before=<createdAt>`, returned oldest-first with `hasMore` and the author's name | The panel loads the newest 50 and can load earlier pages |
