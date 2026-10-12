@@ -6,6 +6,7 @@ import { logger } from "./utils/logger.js";
 import { corsOptions } from "./config/cors.js";
 import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
+import { projectsRouter } from "./routes/projects.js";
 import { notFound, errorHandler } from "./middleware/errors.js";
 
 export function createApp() {
@@ -20,6 +21,7 @@ export function createApp() {
 
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/projects", projectsRouter);
   // more routers are mounted here in later steps
 
   app.use(notFound);
