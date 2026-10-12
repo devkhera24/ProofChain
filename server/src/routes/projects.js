@@ -3,6 +3,8 @@ import { z } from "zod";
 import { validate } from "../middleware/validate.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireProjectRole } from "../middleware/projectRole.js";
+import { apiLimiter } from "../middleware/rateLimits.js";
+import mongoose from "mongoose";
 import { ROLES } from "../models/Project.js";
 import * as projects from "../services/projects/projectService.js";
 import { auditRouter } from "./audit.js";
@@ -14,9 +16,11 @@ import { recommendationsRouter } from "./recommendations.js";
 import { chatRouter } from "./chat.js";
 import { graphRouter } from "./graph.js";
 import { commentsRouter } from "./comments.js";
+import { exportRouter } from "./export.js";
 
 export const projectsRouter = Router({ mergeParams: true });
 projectsRouter.use(requireAuth);
+projectsRouter.use(apiLimiter);
 projectsRouter.use("/:projectId/audit", auditRouter);
 projectsRouter.use("/:projectId/sources", sourcesRouter);
 projectsRouter.use("/:projectId/claims", claimsRouter);
@@ -26,6 +30,7 @@ projectsRouter.use("/:projectId/recommendations", recommendationsRouter);
 projectsRouter.use("/:projectId/chat", chatRouter);
 projectsRouter.use("/:projectId/graph", graphRouter);
 projectsRouter.use("/:projectId/comments", commentsRouter);
+projectsRouter.use("/:projectId/export", exportRouter);
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 const fields = {
@@ -41,7 +46,7 @@ const updateBody = z
   .partial()
   .refine((b) => Object.keys(b).length > 0, "Nothing to update");
 const memberBody = z.object({ email: z.string().trim().email(), role: z.enum(ROLES) });
-const memberParams = z.object({ projectId: z.string(), userId: z.string() });
+const memberParams = z.object({ projectId: z.string(), userId: z.string().refine(mongoose.isValidObjectId, "Invalid user id") });
 
 projectsRouter.get("/", async (req, res) => {
   res.json({ projects: await projects.listProjects(req.user) });

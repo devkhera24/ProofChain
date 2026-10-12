@@ -10,7 +10,7 @@ export const aiLimit = pLimit(env.AI_CONCURRENCY);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function withBackoff(fn, { retries = 4, base = 1000 } = {}) {
+export async function withBackoff(fn, { retries = 4, base = 1000, task = "unknown" } = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
       return await fn();
@@ -19,7 +19,7 @@ export async function withBackoff(fn, { retries = 4, base = 1000 } = {}) {
       const retryable = [429, 500, 502, 503, 504].includes(Number(status));
       if (!retryable || attempt >= retries) throw err;
       const wait = base * 2 ** attempt + Math.random() * 250;
-      logger.warn({ status, attempt, wait }, "Gemini call failed, backing off");
+      logger.warn({ task, status, attempt, wait }, "Gemini call failed, backing off");
       await sleep(wait);
     }
   }
@@ -61,6 +61,7 @@ export async function generateJson({ task, system, prompt, schema, mock, check, 
           contents: currentPrompt,
           config: { systemInstruction: system, temperature, responseMimeType: "application/json" },
         }),
+        { task },
       ),
     );
 
@@ -85,7 +86,7 @@ export async function generateJson({ task, system, prompt, schema, mock, check, 
 }
 
 /** Plain text generation (used rarely; prefer generateJson). */
-export async function generateText({ system, prompt, temperature = 0.3, mock }) {
+export async function generateText({ task = "text", system, prompt, temperature = 0.3, mock }) {
   if (env.AI_MOCK) return mock?.() ?? "Mock response.";
   const res = await aiLimit(() =>
     withBackoff(() =>
@@ -94,6 +95,7 @@ export async function generateText({ system, prompt, temperature = 0.3, mock }) 
         contents: prompt,
         config: { systemInstruction: system, temperature },
       }),
+      { task },
     ),
   );
   return res.text ?? "";

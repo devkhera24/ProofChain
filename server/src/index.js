@@ -4,7 +4,7 @@ import { connectDb, disconnectDb } from "./config/db.js";
 import { createApp } from "./app.js";
 import { logger } from "./utils/logger.js";
 import { resumeInterruptedJobs } from "./services/ingestion/pipeline.js";
-import { failInterruptedBatches } from "./services/recommender/pipeline.js";
+import { failInterruptedBatches, STALE_BATCH_MS } from "./services/recommender/pipeline.js";
 import { initSockets } from "./sockets/index.js";
 
 async function main() {
@@ -16,6 +16,8 @@ async function main() {
   server.listen(env.PORT, "0.0.0.0", () => logger.info(`API listening on :${env.PORT} (${env.NODE_ENV})`));
   await resumeInterruptedJobs(); // jobs interrupted by a Render restart/sleep
   await failInterruptedBatches();
+  // Batches interrupted shortly before this restart become stale later: sweep once more
+  setTimeout(() => failInterruptedBatches().catch((err) => logger.warn({ err }, "stale batch sweep failed")), STALE_BATCH_MS + 5_000).unref();
 
   const shutdown = async (signal) => {
     logger.info(`${signal} received, shutting down`);

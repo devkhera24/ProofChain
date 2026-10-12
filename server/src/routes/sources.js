@@ -5,6 +5,7 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { validate } from "../middleware/validate.js";
 import { requireProjectRole } from "../middleware/projectRole.js";
+import { aiLimiter } from "../middleware/rateLimits.js";
 import { Source } from "../models/Source.js";
 import { Passage } from "../models/Passage.js";
 import { EvidenceLink } from "../models/EvidenceLink.js";
@@ -56,7 +57,7 @@ async function loadSource(req, select) {
   return source;
 }
 
-sourcesRouter.post("/", requireProjectRole("editor"), validate({ body: urlBody }), async (req, res) => {
+sourcesRouter.post("/", requireProjectRole("editor"), aiLimiter, validate({ body: urlBody }), async (req, res) => {
   const source = await Source.create({
     projectId: req.project._id,
     addedBy: req.user._id,
@@ -70,7 +71,7 @@ sourcesRouter.post("/", requireProjectRole("editor"), validate({ body: urlBody }
   res.status(202).json({ source });
 });
 
-sourcesRouter.post("/upload", requireProjectRole("editor"), upload.single("file"), async (req, res) => {
+sourcesRouter.post("/upload", requireProjectRole("editor"), aiLimiter, upload.single("file"), async (req, res) => {
   if (!req.file) throw new AppError(400, "No file uploaded");
   const { title, pages, truncated } = await extractPdf(req.file.buffer);
   const source = await Source.create({
@@ -133,7 +134,7 @@ sourcesRouter.patch(
   },
 );
 
-sourcesRouter.post("/:sourceId/retry", requireProjectRole("editor"), validate({ params: idParam }), async (req, res) => {
+sourcesRouter.post("/:sourceId/retry", requireProjectRole("editor"), aiLimiter, validate({ params: idParam }), async (req, res) => {
   const source = await loadSource(req);
   if (source.status !== "failed") throw new AppError(409, "Only failed sources can be retried");
   source.status = "queued";

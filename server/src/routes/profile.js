@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Router } from "express";
 import { z } from "zod";
 import { validate } from "../middleware/validate.js";
@@ -11,7 +12,7 @@ import { notFoundError } from "../utils/errors.js";
 export const profileRouter = Router({ mergeParams: true });
 
 const patchBody = z.union([
-  z.object({ exclusion: z.object({ id: z.string(), strength: z.enum(["soft", "hard"]) }) }),
+  z.object({ exclusion: z.object({ id: z.string().refine(mongoose.isValidObjectId, "Invalid id"), strength: z.enum(["soft", "hard"]) }) }),
   z.object({ removeExclusion: z.string() }),
 ]);
 

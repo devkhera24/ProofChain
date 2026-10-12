@@ -27,11 +27,12 @@ function describeEvent(e) {
 }
 
 function History({ projectId, claimId }) {
-  const { data: events, isPending } = useQuery({
+  const { data: events, isPending, error } = useQuery({
     queryKey: ["claim-history", projectId, claimId],
     queryFn: () => claimsApi.history(projectId, claimId),
   });
-  if (isPending) return null;
+  if (isPending) return <p className="text-sm text-muted">Loading history…</p>;
+  if (error) return <p className="text-sm text-red-700">Couldn't load the history: {toApiError(error).message}</p>;
   if (!events?.length) return <p className="text-sm text-muted">No history yet.</p>;
   return (
     <ol className="space-y-3 border-l border-line pl-4">

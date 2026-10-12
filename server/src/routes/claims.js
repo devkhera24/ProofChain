@@ -100,6 +100,7 @@ claimsRouter.get("/:claimId", requireProjectRole("viewer"), validate({ params: i
 claimsRouter.patch(
   "/:claimId",
   requireProjectRole("editor"),
+  aiLimiter, // a new wording is re-embedded and re-linked
   validate({ params: idParam, body: patchBody }),
   async (req, res) => {
     const claim = await loadClaim(req);

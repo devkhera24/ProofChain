@@ -53,6 +53,7 @@ recommendationsRouter.get("/:batchId", requireProjectRole("viewer"), validate({ 
 recommendationsRouter.post(
   "/:batchId/items/:index/feedback",
   requireProjectRole("editor"),
+  aiLimiter, // exclusion rules use Gemini; "added" fetches the paper
   validate({ params: itemParams, body: feedbackBody }),
   async (req, res) => {
     const batch = await RecommendationBatch.findOne({ _id: req.valid.params.batchId, ...own(req) });

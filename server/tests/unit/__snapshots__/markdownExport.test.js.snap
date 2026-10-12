@@ -1,0 +1,63 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`markdown export > matches the snapshot 1`] = `
+"# Fixture project
+
+**Goal:** Check the fixture claims  
+**Topics:** graphs, storage  
+**Exported:** 2026-02-03 04:05 UTC from ProofChain
+
+Only evidence confirmed by a person is listed under each claim. Every quote is verbatim from the source passage.
+
+## Claims
+
+### C1: First fixture claim
+
+**Status:** Contested  
+**Scope:** read-heavy workloads  
+**Gaps:** Only supported by interested parties (e.g. vendors); Single source  
+
+#### Supporting evidence
+
+> Generated supporting sentence.
+> — *Fixture vendor post*, p. 2 (P-1, L-1)
+
+#### Contradicting evidence
+
+> Generated contradicting sentence.
+> — *Fixture survey* (P-7, L-2) · scope: writes
+
+### C2: Second fixture claim
+
+**Status:** Open  
+
+_No confirmed evidence yet._
+
+### C10: Tenth fixture claim
+
+**Status:** Open  
+
+_No confirmed evidence yet._
+
+## Still provisional
+
+Evidence suggested by the AI or disputed, not yet confirmed by a person:
+
+- **C1** supports, AI-suggested: "# Generated suggestion." — *Fixture vendor post* (P-2, L-3)
+- **C2** inconclusive, disputed: "Generated disputed sentence." — *Fixture vendor post* (P-3, L-4)
+
+## Open evidence gaps
+
+- **C1** First fixture claim: Only supported by interested parties (e.g. vendors); Single source
+
+## Sources
+
+- **Fixture vendor post**
+  - URL: https://example.com/post
+  - Type: vendor, full text · Retrieved: 2026-01-02
+  - Snapshot hash (SHA-256 of the text the quotes refer to): \`abc123\`
+- **Fixture survey** — A One, B Two, C Three et al., 2021
+  - DOI: https://doi.org/10.5555/fixture-002
+  - Type: peer_reviewed, abstract only · Retrieved: 2026-01-03
+"
+`;

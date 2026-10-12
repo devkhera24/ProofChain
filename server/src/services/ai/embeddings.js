@@ -34,6 +34,7 @@ export async function embedTexts(texts, taskType = "RETRIEVAL_DOCUMENT") {
           contents: chunk,
           config: { taskType, outputDimensionality: env.EMBED_DIM },
         }),
+        { task: `embed.${taskType}` },
       ),
     );
     // Reduced-dimension Gemini embeddings are not unit-length: normalise them.

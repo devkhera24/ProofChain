@@ -55,7 +55,31 @@ JSON Editor → database `proofchain`, collection `passages`, index name `passag
 
 > If `EMBED_DIM` ever changes, drop and recreate this index and re-embed all passages.
 
+## 7. Demo account (optional)
+Creates `demo@proofchain.dev` and an empty "Seminar: Graph Databases" project. It never creates sources or papers:
+the presenter adds real ones in the UI, and the script prints those steps.
+
+```bash
+ALLOW_SEED=true npm --prefix server run seed:demo                    # prints the password once
+ALLOW_SEED=true npm --prefix server run seed:demo -- --reset-password  # issue a new password
+```
+
+Run it from your machine with `MONGODB_URI` pointing at Atlas; keep `ALLOW_SEED=false` on Render.
+
+## 8. Continuous integration
+`.github/workflows/ci.yml` runs the server tests (mock AI, in-memory vector search, in-memory MongoDB) and the
+client build on every push to `main` and on pull requests. Optional: GitHub → Settings → Branches → add a
+branch protection rule for `main` that requires the `server` and `client` checks to pass.
+
+## 9. Release checklist
+1. `npm test` and `npm run build:client` pass locally.
+2. Push; check `/api/health` shows the new commit in `version`, and Vercel shows the same commit.
+3. `API_URL=https://<service>.onrender.com WEB_URL=https://<your-app>.vercel.app npm run smoke`
+
 ## Notes
+- Render web services support WebSockets; live updates use the same URL as the API (`VITE_API_URL`).
+- The API runs as a single instance: background jobs and socket rooms live in memory. Interrupted ingestion
+  resumes at boot; recommendation batches stuck for over 10 minutes are marked failed.
 - Every push to main redeploys both services.
 - Env vars changed in Vercel need a redeploy to take effect (they're baked into the build).
 - After adding new env vars in later steps, update them in the Render dashboard too.

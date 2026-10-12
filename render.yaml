@@ -47,3 +47,5 @@ services:
         value: "15"
       - key: AUTO_RECOMMEND
         value: "true"
+      - key: ALLOW_SEED # only set to "true" for the one-off `npm run seed:demo`
+        value: "false"

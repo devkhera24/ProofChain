@@ -31,7 +31,7 @@ async function classifyIntent(message) {
 
 const smallTalk = (message, project) => {
   const input = { message, topics: project.topics ?? [] };
-  return generateText({ system: smallTalkPrompt.system, prompt: smallTalkPrompt.build(input), mock: () => smallTalkPrompt.mock(input) });
+  return generateText({ task: "chat.smallTalk", system: smallTalkPrompt.system, prompt: smallTalkPrompt.build(input), mock: () => smallTalkPrompt.mock(input) });
 };
 
 /** Saves the agent message (with citations and meta), emits chat.message, returns it. */

@@ -145,9 +145,12 @@ describe("recommendation pipeline (AI mock, mocked scholarly APIs)", () => {
     expect(batches).toHaveLength(1);
     expect(batches[0]).toMatchObject({ trigger: "onboarding", status: "ready" });
 
-    await RecommendationBatch.create({ projectId, userId, humanId: "B9", trigger: "manual", status: "running" });
+    const old = new Date(Date.now() - 11 * 60_000);
+    await RecommendationBatch.create({ projectId, userId, humanId: "B9", trigger: "manual", status: "running", createdAt: old, updatedAt: old });
+    await RecommendationBatch.create({ projectId, userId, humanId: "B10", trigger: "manual", status: "running" });
     await failInterruptedBatches();
     expect(await RecommendationBatch.findOne({ humanId: "B9" }).lean()).toMatchObject({ status: "failed", error: expect.stringMatching(/Interrupted/) });
+    expect(await RecommendationBatch.findOne({ humanId: "B10" }).lean()).toMatchObject({ status: "running" }); // may still be running elsewhere
   });
 });
 

@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "db:indexes": "node scripts/createIndexes.js",
     "ai:ping": "node scripts/aiPing.js",
-    "scholarly:ping": "node scripts/scholarlyPing.js"
+    "scholarly:ping": "node scripts/scholarlyPing.js",
+    "seed:demo": "node scripts/seedDemo.js"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

@@ -202,9 +202,15 @@ export async function maybeOnboard(projectId, userId) {
 }
 
 /** Called at boot: batches left "running" by a restart/sleep can't finish; mark them failed. */
-export async function failInterruptedBatches() {
+export const STALE_BATCH_MS = 10 * 60_000; // a batch normally finishes in well under a minute
+
+/**
+ * Batches still "running" after 10 minutes were interrupted (jobs live in memory). Younger ones are left alone:
+ * during a zero-downtime deploy the previous instance may still be finishing them.
+ */
+export async function failInterruptedBatches({ olderThanMs = STALE_BATCH_MS } = {}) {
   const { modifiedCount } = await RecommendationBatch.updateMany(
-    { status: "running" },
+    { status: "running", createdAt: { $lt: new Date(Date.now() - olderThanMs) } },
     { $set: { status: "failed", error: "Interrupted by a server restart — please run again" } },
   );
   if (modifiedCount) logger.info(`Marked ${modifiedCount} interrupted recommendation batches as failed`);
