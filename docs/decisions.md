@@ -79,3 +79,7 @@
 | 2026-10-12 (step 25) | New env var `AUTO_RECOMMEND` (default true; false in tests) gates the onboarding batch | Tests that ingest sources shouldn't start recommendation jobs |
 | 2026-10-12 (step 25) | Challenger detection failure doesn't fail the batch; claims considered: supported, provisionally supported or contested | A batch without a CHALLENGER is still useful |
 | 2026-10-12 (step 25) | "Added" checks the paper isn't already a source (409); an OA PDF that isn't actually a PDF falls back to the abstract, noted in the `source.added` audit event | The Source model has no notes field; the audit trail records why the source is abstract-only |
+| 2026-10-12 (step 26) | Recommendations and Profile share the right panel as two tabs (`RightPanel`) | The guide places Profile "next to Recommendations"; the panel has one column |
+| 2026-10-12 (step 26) | "Not relevant" reason is optional in the UI; without one, no exclusion rule is created (the card is still replaced) | A rule needs a reason to be meaningful; forcing one adds friction |
+| 2026-10-12 (step 26) | Level is editable in the Profile tab (saved via project PATCH like topics) | The guide lists level in the profile; both feed the profile vector |
+| 2026-10-12 (step 26) | Pipeline log lines are tinted by kind (drop red, pass green, retry amber) with a legend for L1–L4 and pass/drop counts | The guide calls this the demo's "trust moment"; the legend makes the layers readable to non-developers |

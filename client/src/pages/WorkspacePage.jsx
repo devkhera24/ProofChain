@@ -8,13 +8,15 @@ import SourcesTab from "../components/sources/SourcesTab.jsx";
 import ClaimsTab from "../components/claims/ClaimsTab.jsx";
 import ReviewQueue, { reviewQueueQuery } from "../components/review/ReviewQueue.jsx";
 import { useQuery } from "@tanstack/react-query";
+import RightPanel from "../components/recommendations/RightPanel.jsx";
+import PipelineLogView from "../components/review/PipelineLogView.jsx";
 
 const views = {
   graph: <Placeholder title="Evidence graph — Step 28" />,
   claims: <ClaimsTab />,
   sources: <SourcesTab />,
   review: <ReviewQueue />,
-  log: <Placeholder title="Pipeline log — Step 26" />,
+  log: <PipelineLogView />,
 };
 
 export default function WorkspacePage() {
@@ -47,7 +49,7 @@ export default function WorkspacePage() {
       project={data.project}
       role={data.role}
       left={<Placeholder title="Chat — Step 27" />}
-      right={<Placeholder title="Recommendations — Step 26" />}
+      right={<RightPanel />}
       views={views}
       badges={{ review: queue.data?.length }}
     />
