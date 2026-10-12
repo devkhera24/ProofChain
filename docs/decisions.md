@@ -27,3 +27,8 @@
 | 2026-10-12 (step 15) | pdfjs-dist v6: `destroy()` is called on the loading task (in `finally`), not the document | The document proxy no longer has `destroy()` in v6 |
 | 2026-10-12 (step 15) | PDF line/paragraph breaks don't stack: `hasEOL` plus the next line's vertical jump is one line break | The guide's version turned every PDF line into its own paragraph (`"\n" + "\n"`), so passages were single lines and quotes spanning lines could never match; on a 15-page arXiv paper passages went from 696 (median 59 chars) to 284 |
 | 2026-10-12 (step 15) | jsdom 30 requires Node `^22.22.2` on the 22 line | Render's `NODE_VERSION=22` resolves to the latest 22.x, which satisfies it |
+| 2026-10-12 (step 16) | `drain()` loops until no jobs are running | Jobs can enqueue follow-up jobs (Step 19+); a single `Promise.all` snapshot would miss them |
+| 2026-10-12 (step 16) | Source JSON never includes `rawPages` | The upload response otherwise echoed the whole extracted PDF text back to the client |
+| 2026-10-12 (step 16) | Ingestion checks the source still exists before writing passages, and doesn't resurrect it on failure | Deleting a source mid-ingestion would otherwise leave orphaned passages or recreate the source |
+| 2026-10-12 (step 16) | Audit events also for `source.added` and `source.retried` (guide asks for PATCH and DELETE) | Complete provenance trail; cheap |
+| 2026-10-12 (step 16) | Interrupted jobs resume after `server.listen`, not before | Render's health check shouldn't wait on the resume query |

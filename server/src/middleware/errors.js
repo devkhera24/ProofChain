@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import mongoose from "mongoose";
+import multer from "multer";
 import { AppError } from "../utils/errors.js";
 import { logger } from "../utils/logger.js";
 import { env } from "../config/env.js";
@@ -19,6 +20,11 @@ export function errorHandler(err, req, res, _next) {
   } else if (err instanceof mongoose.Error.CastError) {
     status = 400;
     body = { error: `Invalid ${err.path}` };
+  } else if (err instanceof multer.MulterError) {
+    status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    body = {
+      error: err.code === "LIMIT_FILE_SIZE" ? `The file is too large (max ${env.MAX_UPLOAD_MB} MB)` : err.message,
+    };
   } else if (err?.code === 11000) {
     status = 409;
     body = { error: "Duplicate value", fields: Object.keys(err.keyValue ?? {}) };

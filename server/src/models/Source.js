@@ -37,6 +37,6 @@ sourceSchema.index(
   { projectId: 1, textHash: 1 },
   { unique: true, partialFilterExpression: { textHash: { $type: "string" } } },
 );
-sourceSchema.plugin(toJSONPlugin);
+sourceSchema.plugin(toJSONPlugin, { hide: ["rawPages"] }); // internal: extracted text before chunking
 
 export const Source = mongoose.model("Source", sourceSchema);

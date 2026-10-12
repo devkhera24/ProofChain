@@ -6,10 +6,12 @@ import { requireProjectRole } from "../middleware/projectRole.js";
 import { ROLES } from "../models/Project.js";
 import * as projects from "../services/projects/projectService.js";
 import { auditRouter } from "./audit.js";
+import { sourcesRouter } from "./sources.js";
 
 export const projectsRouter = Router({ mergeParams: true });
 projectsRouter.use(requireAuth);
 projectsRouter.use("/:projectId/audit", auditRouter);
+projectsRouter.use("/:projectId/sources", sourcesRouter);
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 const fields = {
