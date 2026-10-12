@@ -12,9 +12,11 @@
     "start": "node src/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:indexes": "node scripts/createIndexes.js"
+    "db:indexes": "node scripts/createIndexes.js",
+    "ai:ping": "node scripts/aiPing.js"
   },
   "dependencies": {
+    "@google/genai": "^2.28.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
@@ -23,6 +25,7 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.5",
+    "p-limit": "^7.3.3",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "zod": "^4.6.5"
