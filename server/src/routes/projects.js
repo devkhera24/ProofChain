@@ -5,9 +5,11 @@ import { requireAuth } from "../middleware/auth.js";
 import { requireProjectRole } from "../middleware/projectRole.js";
 import { ROLES } from "../models/Project.js";
 import * as projects from "../services/projects/projectService.js";
+import { auditRouter } from "./audit.js";
 
 export const projectsRouter = Router({ mergeParams: true });
 projectsRouter.use(requireAuth);
+projectsRouter.use("/:projectId/audit", auditRouter);
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 const fields = {

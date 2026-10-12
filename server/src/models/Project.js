@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { toJSONPlugin } from "./plugins.js";
 
 export const ROLES = ["viewer", "editor", "owner"]; // ordered by power
 
@@ -23,13 +24,6 @@ const projectSchema = new mongoose.Schema(
 );
 projectSchema.index({ "members.userId": 1 });
 
-projectSchema.set("toJSON", {
-  transform: (_doc, ret) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    delete ret.__v;
-    return ret;
-  },
-});
+projectSchema.plugin(toJSONPlugin);
 
 export const Project = mongoose.model("Project", projectSchema);

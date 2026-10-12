@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { toJSONPlugin } from "./plugins.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,14 +10,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.set("toJSON", {
-  transform: (_doc, ret) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    delete ret.__v;
-    delete ret.passwordHash;
-    return ret;
-  },
-});
+userSchema.plugin(toJSONPlugin, { hide: ["passwordHash"] });
 
 export const User = mongoose.model("User", userSchema);

@@ -13,3 +13,6 @@
 | 2026-10-12 (step 8) | Auth token stored in `localStorage` | Simple across the Vercel/Render domains; XSS exposure is limited by never rendering user HTML (`dangerouslySetInnerHTML` is banned) |
 | 2026-10-12 (step 8) | Startup `/auth/me` only logs out on 401, not on any error | Guide used `.catch(logout)`; a cold-start timeout or network error would otherwise wipe a valid token |
 | 2026-10-12 (step 8) | Login/register pages redirect to the app if already logged in | Avoids showing the form to a signed-in user |
+| 2026-10-12 (step 11) | `toJSONPlugin` takes a `hide` option; `User` uses `hide: ["passwordHash"]`, `Project` also uses the plugin | Login selects `+passwordHash`, so the plugin alone would leak the hash in the response |
+| 2026-10-12 (step 11) | `auditHistory` returns documents (no `.lean()`) and sorts by `{ at: -1, _id: -1 }` | So the API sends `id` instead of `_id` like every other model; `_id` makes same-millisecond events order deterministically |
+| 2026-10-12 (step 11) | Audit route accepts `limit` (1–500, default 100) and is mounted inside the projects router | Avoids running `requireAuth` twice for nested project routes |
