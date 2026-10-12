@@ -30,6 +30,31 @@
 2. Redeploy the API.
 3. Run: `API_URL=... WEB_URL=... npm run smoke` from the repo root.
 
+## 6. Database indexes and the Vector Search index
+Run once after the first deploy, and again whenever models change (safe to re-run):
+
+```bash
+npm --prefix server run db:indexes   # uses MONGODB_URI from server/.env — point it at Atlas
+```
+
+It syncs every model's indexes and requests the `passage_vector_index` Vector Search index. In Atlas →
+your cluster → **Atlas Search** (or **Search & Vector Search**), wait until the index shows **READY** (~1 minute).
+
+**Fallback (if the script can't create it):** Atlas Search → Create Search Index → **Vector Search** →
+JSON Editor → database `proofchain`, collection `passages`, index name `passage_vector_index`, definition:
+
+```json
+{
+  "fields": [
+    { "type": "vector", "path": "embedding", "numDimensions": 768, "similarity": "cosine" },
+    { "type": "filter", "path": "projectId" },
+    { "type": "filter", "path": "sourceId" }
+  ]
+}
+```
+
+> If `EMBED_DIM` ever changes, drop and recreate this index and re-embed all passages.
+
 ## Notes
 - Every push to main redeploys both services.
 - Env vars changed in Vercel need a redeploy to take effect (they're baked into the build).

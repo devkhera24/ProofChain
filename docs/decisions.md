@@ -16,3 +16,5 @@
 | 2026-10-12 (step 11) | `toJSONPlugin` takes a `hide` option; `User` uses `hide: ["passwordHash"]`, `Project` also uses the plugin | Login selects `+passwordHash`, so the plugin alone would leak the hash in the response |
 | 2026-10-12 (step 11) | `auditHistory` returns documents (no `.lean()`) and sorts by `{ at: -1, _id: -1 }` | So the API sends `id` instead of `_id` like every other model; `_id` makes same-millisecond events order deterministically |
 | 2026-10-12 (step 11) | Audit route accepts `limit` (1–500, default 100) and is mounted inside the projects router | Avoids running `requireAuth` twice for nested project routes |
+| 2026-10-12 (step 12) | Memory-mode vector search scores as `(1 + cosine) / 2` instead of raw cosine | Atlas reports cosine similarity on that 0–1 scale; matching it keeps any score threshold identical in tests and production |
+| 2026-10-12 (step 12) | `db:indexes` catches search-index errors and prints guidance instead of crashing | Local MongoDB has no Atlas Search; the user needs a pointer to the UI fallback |
