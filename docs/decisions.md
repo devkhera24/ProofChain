@@ -32,3 +32,6 @@
 | 2026-10-12 (step 16) | Ingestion checks the source still exists before writing passages, and doesn't resurrect it on failure | Deleting a source mid-ingestion would otherwise leave orphaned passages or recreate the source |
 | 2026-10-12 (step 16) | Audit events also for `source.added` and `source.retried` (guide asks for PATCH and DELETE) | Complete provenance trail; cheap |
 | 2026-10-12 (step 16) | Interrupted jobs resume after `server.listen`, not before | Render's health check shouldn't wait on the resume query |
+| 2026-10-12 (step 17) | Client loads passages in pages of 200 until `total` (`sourcesApi.allPassages`) instead of one `limit: 500` request | The server caps `limit` at 200 (Step 16), so the guide's request would 400; real sources exceed 200 passages (Wikipedia page: 358) |
+| 2026-10-12 (step 17) | Source text is rendered in one `whitespace-pre-wrap` block of segments; page starts are extra segment cuts with a "p.N" marker | Splitting segments on `"\n\n"` into `<p>` breaks segments that span a paragraph break; pre-wrap shows paragraphs without splitting |
+| 2026-10-12 (step 17) | Source list also has "Remove" (with confirm) for editors | The DELETE route exists (Step 16) and users need a way to undo a wrong source |

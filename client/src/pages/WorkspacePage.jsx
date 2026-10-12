@@ -4,11 +4,12 @@ import { toApiError } from "../api/client.js";
 import WorkspaceLayout from "../components/layout/WorkspaceLayout.jsx";
 import StateMessage from "../components/common/StateMessage.jsx";
 import Placeholder from "../components/common/Placeholder.jsx";
+import SourcesTab from "../components/sources/SourcesTab.jsx";
 
 const views = {
   graph: <Placeholder title="Evidence graph — Step 28" />,
   claims: <Placeholder title="Claims — Step 21" />,
-  sources: <Placeholder title="Sources — Step 17" />,
+  sources: <SourcesTab />,
   review: <Placeholder title="Review queue — Step 21" />,
   log: <Placeholder title="Pipeline log — Step 26" />,
 };
