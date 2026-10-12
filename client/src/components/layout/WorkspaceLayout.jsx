@@ -9,7 +9,7 @@ const PANELS = [
   { key: "right", label: "Recommendations" },
 ];
 
-export default function WorkspaceLayout({ project, role, left, right, views }) {
+export default function WorkspaceLayout({ project, role, left, right, views, badges = {} }) {
   const [panel, setPanel] = useState("center"); // which panel is visible below `lg`
 
   return (
@@ -51,6 +51,9 @@ export default function WorkspaceLayout({ project, role, left, right, views }) {
                 }
               >
                 {t}
+                {badges[t] > 0 && (
+                  <span className="ml-1.5 rounded-full bg-disputed px-1.5 py-0.5 text-[10px] font-semibold text-white">{badges[t]}</span>
+                )}
               </NavLink>
             ))}
           </nav>

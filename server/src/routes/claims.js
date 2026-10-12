@@ -52,7 +52,7 @@ async function linkCounts(projectId) {
   for (const { _id, n } of rows) {
     const c = (out[_id.claimId] ??= { total: 0, byStance: {}, byStatus: {} });
     c.total += n;
-    c.byStance[_id.stance] = (c.byStance[_id.stance] ?? 0) + n;
+    if (_id.status !== "rejected") c.byStance[_id.stance] = (c.byStance[_id.stance] ?? 0) + n; // rejected ≠ evidence
     c.byStatus[_id.status] = (c.byStatus[_id.status] ?? 0) + n;
   }
   return out;

@@ -5,18 +5,22 @@ import WorkspaceLayout from "../components/layout/WorkspaceLayout.jsx";
 import StateMessage from "../components/common/StateMessage.jsx";
 import Placeholder from "../components/common/Placeholder.jsx";
 import SourcesTab from "../components/sources/SourcesTab.jsx";
+import ClaimsTab from "../components/claims/ClaimsTab.jsx";
+import ReviewQueue, { reviewQueueQuery } from "../components/review/ReviewQueue.jsx";
+import { useQuery } from "@tanstack/react-query";
 
 const views = {
   graph: <Placeholder title="Evidence graph — Step 28" />,
-  claims: <Placeholder title="Claims — Step 21" />,
+  claims: <ClaimsTab />,
   sources: <SourcesTab />,
-  review: <Placeholder title="Review queue — Step 21" />,
+  review: <ReviewQueue />,
   log: <Placeholder title="Pipeline log — Step 26" />,
 };
 
 export default function WorkspacePage() {
   const { projectId } = useParams();
   const { data, isPending, error } = useProject(projectId);
+  const queue = useQuery({ ...reviewQueueQuery(projectId), enabled: !!data });
 
   if (isPending) return <StateMessage kind="loading" title="Opening project…" />;
   if (error) {
@@ -45,6 +49,7 @@ export default function WorkspacePage() {
       left={<Placeholder title="Chat — Step 27" />}
       right={<Placeholder title="Recommendations — Step 26" />}
       views={views}
+      badges={{ review: queue.data?.length }}
     />
   );
 }

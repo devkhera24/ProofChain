@@ -49,3 +49,8 @@
 | 2026-10-12 (step 20) | Editing a claim's text re-runs linking; extraction recomputes claim status for created/merged claims | New wording needs new evidence; extracted claims start with an AI link, so `provisionalStatus` must reflect it |
 | 2026-10-12 (step 20) | Manual links require the quote to pass L4 (422 otherwise) and are rejected with 409 if the claim–passage pair is already linked | Humans are held to the same "real quote" rule; the existing link should be reviewed instead |
 | 2026-10-12 (step 20) | A missing review reason returns 400 with `details: { field: "reason", why }` | The client can show the error under the reason field |
+| 2026-10-12 (step 21) | `GET /links` also accepts `sourceId` | The source viewer colours passages by the stance of their links and needs just that source's links |
+| 2026-10-12 (step 21) | Claim list `byStance` counts exclude rejected links (`byStatus` still counts them) | Rejected links are not evidence; the ●3 ●1 ●0 counts should match what the claim status uses |
+| 2026-10-12 (step 21) | A segment covered by several stances is underlined as contradicts > supports > inconclusive; dashed when none of its links is confirmed | Contradicting evidence is the most important thing to notice when reading |
+| 2026-10-12 (step 21) | Claim detail adds "Find more evidence" (re-run linking) and Delete; rejected links are tucked under a collapsed section | Uses existing routes; keeps rejected evidence visible for provenance without cluttering the columns |
+| 2026-10-12 (step 21) | Claims list polls every 4 s while a claim is < 90 s old; claim detail polls while it has no links | Linking runs in the background after creation; Step 29 replaces polling with socket events |

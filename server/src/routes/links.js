@@ -27,6 +27,7 @@ const listQuery = z.object({
     .transform((s) => s?.split(",").filter(Boolean))
     .pipe(z.array(z.enum(LINK_STATUSES)).optional()),
   claimId: objectId("claim").optional(),
+  sourceId: objectId("source").optional(),
 });
 const linkParams = z.object({ projectId: z.string(), linkId: objectId("link") });
 const claimParams = z.object({ projectId: z.string(), claimId: objectId("claim") });
@@ -57,10 +58,11 @@ const shape = (l) => {
 };
 
 linksRouter.get("/", requireProjectRole("viewer"), validate({ query: listQuery }), async (req, res) => {
-  const { status, claimId } = req.valid.query;
+  const { status, claimId, sourceId } = req.valid.query;
   const filter = { projectId: req.project._id };
   if (status?.length) filter.status = { $in: status };
   if (claimId) filter.claimId = claimId;
+  if (sourceId) filter.sourceId = sourceId;
   const links = await populated(EvidenceLink.find(filter).sort({ createdAt: 1, _id: 1 }).limit(500));
   res.json({ links: links.map(shape) });
 });

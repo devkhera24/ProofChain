@@ -213,6 +213,9 @@ describe("review workflow (L6)", () => {
     expect((await request(app).get(base).query({ status: "confirmed" }).set(owner.auth)).body.links).toEqual([]);
     expect((await request(app).get(base).query({ claimId: claim.id }).set(owner.auth)).body.links).toHaveLength(3);
     expect((await request(app).get(base).query({ status: "maybe" }).set(owner.auth)).status).toBe(400);
+    const { source } = await Source.findOne().lean().then((s) => ({ source: s }));
+    expect((await request(app).get(base).query({ sourceId: String(source._id) }).set(owner.auth)).body.links).toHaveLength(3);
+    expect((await request(app).get(base).query({ sourceId: String(new mongoose.Types.ObjectId()) }).set(owner.auth)).body.links).toEqual([]);
   });
 
   it("adds manual links only with a quote that passes L4", async () => {

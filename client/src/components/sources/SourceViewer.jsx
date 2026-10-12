@@ -3,6 +3,8 @@ import { Link, useParams, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { sourcesApi } from "../../api/sources.js";
+import { linksApi } from "../../api/links.js";
+import { STANCE } from "../../lib/evidence.js";
 import { toApiError } from "../../api/client.js";
 import { buildSegments } from "../../lib/segments.js";
 import { SOURCE_TYPES, DEPTH_LABELS } from "../../lib/sourceLabels.js";
@@ -20,6 +22,22 @@ export default function SourceViewer() {
     queryFn: () => sourcesApi.allPassages(projectId, sourceId),
     enabled: source.data?.status === "ready",
   });
+
+  const links = useQuery({
+    queryKey: ["links", projectId, "source", sourceId],
+    queryFn: () => linksApi.list(projectId, { sourceId }),
+    enabled: source.data?.status === "ready",
+  });
+  // passage humanId → evidence links on it (rejected links aren't evidence)
+  const linksByPassage = useMemo(() => {
+    const map = new Map();
+    for (const l of links.data ?? []) {
+      if (l.status === "rejected" || !l.passage) continue;
+      if (!map.has(l.passage.humanId)) map.set(l.passage.humanId, []);
+      map.get(l.passage.humanId).push(l);
+    }
+    return map;
+  }, [links.data]);
 
   const pageStarts = useMemo(() => source.data?.pageStarts ?? [], [source.data]);
   const segments = useMemo(
@@ -96,16 +114,7 @@ export default function SourceViewer() {
                   </span>
                 )}
                 {seg.passageIds.length ? (
-                  <span
-                    data-passages={seg.passageIds.join(" ")}
-                    title={seg.passageIds.join(", ")}
-                    className={clsx(
-                      "rounded-sm transition-colors hover:bg-teal/10",
-                      seg.passageIds.includes(target) && "bg-amber-100",
-                    )}
-                  >
-                    {seg.text}
-                  </span>
+                  <Segment seg={seg} links={seg.passageIds.flatMap((id) => linksByPassage.get(id) ?? [])} target={target} />
                 ) : (
                   seg.text
                 )}
@@ -115,5 +124,30 @@ export default function SourceViewer() {
         </div>
       )}
     </article>
+  );
+}
+
+/** Stance shown for a stretch of text: contradicting evidence wins, then supporting, then inconclusive. */
+function segmentStance(links) {
+  for (const stance of ["contradicts", "supports", "inconclusive"]) if (links.some((l) => l.stance === stance)) return stance;
+  return null;
+}
+
+function Segment({ seg, links, target }) {
+  const stance = segmentStance(links);
+  const aiOnly = links.length > 0 && !links.some((l) => l.status === "confirmed");
+  const claims = [...new Set(links.map((l) => `${l.claim?.humanId} ${l.stance}${l.status === "confirmed" ? "" : ` (${l.status.replace("_", " ")})`}`))];
+  return (
+    <span
+      data-passages={seg.passageIds.join(" ")}
+      title={[seg.passageIds.join(", "), ...claims].join("\n")}
+      className={clsx(
+        "rounded-sm transition-colors hover:bg-teal/10",
+        stance && ["underline decoration-2 underline-offset-4", STANCE[stance].decoration, aiOnly && "decoration-dashed"],
+        seg.passageIds.includes(target) && "bg-amber-100",
+      )}
+    >
+      {seg.text}
+    </span>
   );
 }
