@@ -11,6 +11,8 @@ import { embedTexts } from "../ai/embeddings.js";
 import { reserveHumanIds } from "../../utils/ids.js";
 import { enqueue } from "../../jobs/runner.js";
 import { extractClaimsFromSource } from "../claims/claimService.js";
+import { scheduleLinking } from "../evidence/linker.js";
+import { Claim } from "../../models/Claim.js";
 import { emitToProject } from "../realtime/events.js"; // no-op stub until Step 29
 import { logger } from "../../utils/logger.js";
 
@@ -78,7 +80,10 @@ export async function ingestSource(sourceId) {
     await source.save();
     emitToProject(source.projectId, "source.updated", { sourceId: source.id, status: "ready" });
 
-    // 6. Follow-ups
+    // 6. Follow-ups: re-link the existing claims against only this new source, then extract new claims
+    //    (claims extracted from it are linked against every source by extractClaimsFromSource)
+    const existingClaims = await Claim.find({ projectId: source.projectId }).select("_id").lean();
+    existingClaims.forEach((c) => scheduleLinking(c._id, { sourceIds: [String(source._id)] }));
     enqueue(`claims:${source.id}`, () => extractClaimsFromSource(source._id));
     // await refreshProfileFromSources(project)   ← Step 23
   } catch (err) {

@@ -8,6 +8,7 @@ import { Claim } from "../models/Claim.js";
 import { EvidenceLink } from "../models/EvidenceLink.js";
 import { AuditEvent } from "../models/AuditEvent.js";
 import { createOrMergeClaim } from "../services/claims/claimService.js";
+import { scheduleLinking } from "../services/evidence/linker.js";
 import { embedOne } from "../services/ai/embeddings.js";
 import { recordAudit } from "../services/audit/auditService.js";
 import { emitToProject } from "../services/realtime/events.js";
@@ -74,8 +75,10 @@ claimsRouter.post("/", requireProjectRole("editor"), aiLimiter, validate({ body:
     userId: req.user.id,
     actorName: req.user.name,
   });
-  if (!merged) emitToProject(req.project._id, "claims.updated", { claimId: claim.id });
-  // TODO(Step 20): scheduleLinking(claim) for a new claim
+  if (!merged) {
+    emitToProject(req.project._id, "claims.updated", { claimId: claim.id });
+    scheduleLinking(claim._id);
+  }
   res.status(merged ? 200 : 201).json({ claim, merged });
 });
 
@@ -114,6 +117,7 @@ claimsRouter.patch(
     if (Object.keys(change).length) {
       await claim.save();
       await recordAudit({ ...actor(req), action: "claim.updated", target: target(claim), change, reason });
+      if (change.text) scheduleLinking(claim._id); // new wording → look for evidence again
       emitToProject(req.project._id, "claims.updated", { claimId: claim.id });
     }
     res.json({ claim });

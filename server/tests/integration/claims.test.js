@@ -18,6 +18,9 @@ vi.mock("../../src/services/ai/prompts/extractClaims.js", async (importOriginal)
   return { ...real, mock: (input) => (override.mock ?? real.mock)(input) };
 });
 
+// These tests cover extraction and the claim routes; linking is tested in links.test.js
+vi.mock("../../src/services/evidence/linker.js", () => ({ scheduleLinking: vi.fn(), linkClaim: vi.fn() }));
+
 const app = createApp();
 // Generated text only — no real papers or quotes
 const line = (n, topic) => `Statement ${n} reports that ${topic} reduces latency for workloads of type ${n}.`;

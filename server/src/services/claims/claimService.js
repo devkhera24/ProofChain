@@ -8,6 +8,8 @@ import * as extractPrompt from "../ai/prompts/extractClaims.js";
 import { matchQuote } from "../validation/textMatch.js";
 import { createPipelineLog } from "../validation/pipelineLog.js";
 import { recordAudit } from "../audit/auditService.js";
+import { scheduleLinking } from "../evidence/linker.js";
+import { recomputeClaimStatus } from "../evidence/claimStatus.js";
 import { emitToProject } from "../realtime/events.js";
 import { nextHumanId } from "../../utils/ids.js";
 import { cosine } from "../../utils/vectors.js";
@@ -123,6 +125,7 @@ export async function extractClaimsFromSource(sourceId) {
   log.info("done", { created: result.created.length, merged: result.merged.length, dropped: result.dropped });
   logger.info({ sourceId, lines: log.lines }, "claim extraction finished");
   if (result.created.length || result.merged.length) emitToProject(projectId, "claims.updated", { sourceId: String(sourceId) });
-  // TODO(Step 20): scheduleLinking(claim) for each newly created claim
+  for (const claim of [...result.created, ...result.merged]) await recomputeClaimStatus(claim._id);
+  for (const claim of result.created) scheduleLinking(claim._id);
   return result;
 }
