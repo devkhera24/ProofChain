@@ -35,3 +35,7 @@
 | 2026-10-12 (step 17) | Client loads passages in pages of 200 until `total` (`sourcesApi.allPassages`) instead of one `limit: 500` request | The server caps `limit` at 200 (Step 16), so the guide's request would 400; real sources exceed 200 passages (Wikipedia page: 358) |
 | 2026-10-12 (step 17) | Source text is rendered in one `whitespace-pre-wrap` block of segments; page starts are extra segment cuts with a "p.N" marker | Splitting segments on `"\n\n"` into `<p>` breaks segments that span a paragraph break; pre-wrap shows paragraphs without splitting |
 | 2026-10-12 (step 17) | Source list also has "Remove" (with confirm) for editors | The DELETE route exists (Step 16) and users need a way to undo a wrong source |
+| 2026-10-12 (step 18) | `matchQuote` strips wrapping quote marks/ellipses *after* normalising (the guide stripped before) | Curly quotes around an AI quote (e.g. “…”) weren't stripped, so verbatim quotes fell through to near-match instead of exact |
+| 2026-10-12 (step 18) | Near matches are extended to the end of the word | The best window can end mid-word; the UI must never show half a word as "the quote" |
+| 2026-10-12 (step 18) | Matching also unifies primes (′ ″) like `normalizeText` does | Keeps quote normalisation consistent with the canonical source text |
+| 2026-10-12 (step 18) | `lastName` handles "Last, First" (takes the part before the comma) | Otherwise "Smith, J." → "j" and same-paper records fail L2 with author_mismatch |
