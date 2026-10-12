@@ -4,6 +4,7 @@ import { connectDb, disconnectDb } from "./config/db.js";
 import { createApp } from "./app.js";
 import { logger } from "./utils/logger.js";
 import { resumeInterruptedJobs } from "./services/ingestion/pipeline.js";
+import { failInterruptedBatches } from "./services/recommender/pipeline.js";
 
 async function main() {
   await connectDb();
@@ -13,6 +14,7 @@ async function main() {
 
   server.listen(env.PORT, "0.0.0.0", () => logger.info(`API listening on :${env.PORT} (${env.NODE_ENV})`));
   await resumeInterruptedJobs(); // jobs interrupted by a Render restart/sleep
+  await failInterruptedBatches();
 
   const shutdown = async (signal) => {
     logger.info(`${signal} received, shutting down`);

@@ -4,6 +4,7 @@ process.env.JWT_SECRET = "test-secret-test-secret-test-secret-123456";
 process.env.AI_MOCK = "true";
 process.env.VECTOR_SEARCH_MODE = "memory";
 process.env.CORS_ORIGINS = "http://localhost:5173";
+process.env.AUTO_RECOMMEND = "false"; // tests that need the onboarding batch call runRecommendation directly
 
 // Tests never hit real external APIs (CLAUDE.md rule 5). Mock fetch (vi.spyOn / vi.mock) where a test needs it.
 const realFetch = globalThis.fetch;

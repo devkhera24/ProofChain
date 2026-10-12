@@ -4726,6 +4726,7 @@ design document's "Future scope" (an NLI second opinion for stance, Zotero impor
 | `S2_API_KEY` | recommended | — | Semantic Scholar key |
 | `CONTACT_EMAIL` | yes (prod) | — | OpenAlex/Crossref polite pool, Unpaywall |
 | `MAX_UPLOAD_MB` | no | 15 | PDF upload limit |
+| `AUTO_RECOMMEND` | no | true | Run the onboarding recommendation batch after a project's first source is ready (`false` in tests) |
 | `ALLOW_SEED` | no | — | Must be `true` to run `seed:demo` |
 
 ### Client (`client/.env`, Vercel dashboard)

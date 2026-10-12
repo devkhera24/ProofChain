@@ -34,6 +34,7 @@ const schema = z
     CONTACT_EMAIL: z.string().email().default("proofchain@example.com"),
 
     MAX_UPLOAD_MB: z.coerce.number().default(15),
+    AUTO_RECOMMEND: bool("true"), // first recommendation batch after a project's first source is ready
   })
   .superRefine((v, ctx) => {
     if (!v.AI_MOCK && !v.GEMINI_API_KEY) {
