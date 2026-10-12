@@ -18,3 +18,7 @@
 | 2026-10-12 (step 11) | Audit route accepts `limit` (1–500, default 100) and is mounted inside the projects router | Avoids running `requireAuth` twice for nested project routes |
 | 2026-10-12 (step 12) | Memory-mode vector search scores as `(1 + cosine) / 2` instead of raw cosine | Atlas reports cosine similarity on that 0–1 scale; matching it keeps any score threshold identical in tests and production |
 | 2026-10-12 (step 12) | `db:indexes` catches search-index errors and prints guidance instead of crashing | Local MongoDB has no Atlas Search; the user needs a pointer to the UI fallback |
+| 2026-10-12 (step 14) | The canonical text of a source is its normalised text; all passage offsets and highlights refer to it | We don't map back to the raw HTML/PDF layout (guide §14) |
+| 2026-10-12 (step 14) | `normalizeText` strips trailing spaces before newlines, so a whitespace-only line (`"\n \n"`) still counts as a paragraph break | PDF/HTML extraction often produces such lines; without this, paragraphs were silently merged |
+| 2026-10-12 (step 14) | `joinPages` adds no `"\n\n"` separator for empty pages (e.g. scanned images) | Avoids runs of blank paragraphs; `pageForOffset` still maps text to the right page |
+| 2026-10-12 (step 14) | A sentence longer than `maxChars` is split at the last space before the limit (mid-word only when there is no space) | Guide §14.2 edge case: PDF tables flattened into one "sentence" |
