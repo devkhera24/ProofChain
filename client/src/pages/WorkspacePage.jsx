@@ -3,7 +3,6 @@ import { useProject } from "../hooks/useProject.js";
 import { toApiError } from "../api/client.js";
 import WorkspaceLayout from "../components/layout/WorkspaceLayout.jsx";
 import StateMessage from "../components/common/StateMessage.jsx";
-import Placeholder from "../components/common/Placeholder.jsx";
 import SourcesTab from "../components/sources/SourcesTab.jsx";
 import ClaimsTab from "../components/claims/ClaimsTab.jsx";
 import ReviewQueue, { reviewQueueQuery } from "../components/review/ReviewQueue.jsx";
@@ -11,9 +10,18 @@ import { useQuery } from "@tanstack/react-query";
 import RightPanel from "../components/recommendations/RightPanel.jsx";
 import PipelineLogView from "../components/review/PipelineLogView.jsx";
 import ChatPanel from "../components/chat/ChatPanel.jsx";
+import { lazy, Suspense } from "react";
+import Spinner from "../components/common/Spinner.jsx";
+
+// Cytoscape is large: load the Graph tab only when it is opened
+const GraphView = lazy(() => import("../components/graph/GraphView.jsx"));
 
 const views = {
-  graph: <Placeholder title="Evidence graph — Step 28" />,
+  graph: (
+    <Suspense fallback={<Spinner label="Loading the graph…" />}>
+      <GraphView />
+    </Suspense>
+  ),
   claims: <ClaimsTab />,
   sources: <SourcesTab />,
   review: <ReviewQueue />,

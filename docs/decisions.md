@@ -89,3 +89,7 @@
 | 2026-10-12 (step 27) | Removed `[P-x]` markers are tidied (no space before punctuation); the sentence itself stays | Matches the guide (only the marker is removed) while keeping the prose readable |
 | 2026-10-12 (step 27) | The intent mock uses keyword rules (recommend / claim: / greetings / otherwise question) | Lets tests exercise every branch of the orchestrator |
 | 2026-10-12 (step 27) | Chat history is paginated with `before=<createdAt>`, returned oldest-first with `hasMore` and the author's name | The panel loads the newest 50 and can load earlier pages |
+| 2026-10-12 (step 28) | Graph: with no filter, claims without links are still shown; with a status/source filter, only claims that have matching links | Unlinked claims are part of the picture (they need evidence); filtered views should only show what matches |
+| 2026-10-12 (step 28) | Passage nodes carry their text, and the response includes `counts` | The side drawer shows the passage without another request; the toolbar shows claims/passages/links |
+| 2026-10-12 (step 28) | The Graph tab is lazy-loaded (`React.lazy`) | Cytoscape is ~440 kB; the main bundle stays at ~420 kB and the graph code loads when the tab is first opened |
+| 2026-10-12 (step 28) | Reviewing a link from the graph drawer also refreshes the graph | The edge style (dashed/solid/purple) must reflect the new status |

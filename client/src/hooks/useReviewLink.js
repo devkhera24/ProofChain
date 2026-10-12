@@ -9,6 +9,7 @@ export function useReviewLink(projectId) {
     onSuccess: (link) => {
       qc.invalidateQueries({ queryKey: ["links", projectId] });
       qc.invalidateQueries({ queryKey: ["claims", projectId] });
+      qc.invalidateQueries({ queryKey: ["graph", projectId] });
       qc.invalidateQueries({ queryKey: ["claim", projectId, link.claim?.id] });
       qc.invalidateQueries({ queryKey: ["claim-history", projectId, link.claim?.id] });
     },

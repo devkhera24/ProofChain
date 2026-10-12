@@ -12,6 +12,7 @@ import { linksRouter } from "./links.js";
 import { profileRouter } from "./profile.js";
 import { recommendationsRouter } from "./recommendations.js";
 import { chatRouter } from "./chat.js";
+import { graphRouter } from "./graph.js";
 
 export const projectsRouter = Router({ mergeParams: true });
 projectsRouter.use(requireAuth);
@@ -22,6 +23,7 @@ projectsRouter.use("/:projectId/links", linksRouter);
 projectsRouter.use("/:projectId/profile", profileRouter);
 projectsRouter.use("/:projectId/recommendations", recommendationsRouter);
 projectsRouter.use("/:projectId/chat", chatRouter);
+projectsRouter.use("/:projectId/graph", graphRouter);
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 const fields = {
