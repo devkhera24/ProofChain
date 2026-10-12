@@ -5,7 +5,12 @@ import { chatApi } from "../../api/chat.js";
 import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
 import { latestBatchKey } from "../../hooks/useLatestBatch.js";
+import { AnimatePresence, motion } from "motion/react";
+import { MessageSquareText, Send } from "lucide-react";
 import ChatMessage from "./ChatMessage.jsx";
+import Button from "../ui/Button.jsx";
+import { Skeleton } from "../ui/Skeleton.jsx";
+import { stagger, staggerChild } from "../../lib/motion.js";
 
 const MAX = 2000;
 
@@ -16,13 +21,13 @@ function examples(topic) {
 
 function Typing() {
   return (
-    <div className="flex justify-start" aria-label="Assistant is typing">
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start" aria-label="Assistant is typing">
       <div className="flex gap-1 rounded-2xl rounded-bl-sm bg-surface px-3 py-3 ring-1 ring-line">
         {[0, 150, 300].map((d) => (
           <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted motion-reduce:animate-none" style={{ animationDelay: `${d}ms` }} />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -62,7 +67,8 @@ export default function ChatPanel() {
   });
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
   }, [messages.length, send.isPending]);
 
   const submit = (message = text) => {
@@ -86,26 +92,39 @@ export default function ChatPanel() {
           </button>
         )}
         {history.isPending ? (
-          <p className="text-sm text-muted">Loading conversation…</p>
+          <div className="space-y-3" role="status" aria-label="Loading conversation…">
+            <Skeleton className="h-10 w-3/4 rounded-2xl" />
+            <Skeleton className="ml-auto h-8 w-1/2 rounded-2xl" />
+            <Skeleton className="h-14 w-4/5 rounded-2xl" />
+          </div>
         ) : history.error ? (
           <p className="text-sm text-red-700">{toApiError(history.error).message}</p>
         ) : !messages.length && !send.isPending ? (
-          <div className="space-y-2 pt-4">
-            <p className="text-sm text-muted">Ask about your sources, state a claim to check, or ask for papers. For example:</p>
+          <motion.div className="space-y-2 pt-4" variants={stagger(0.06)} initial="initial" animate="animate">
+            <motion.div variants={staggerChild} className="flex items-center gap-2 text-sm text-muted">
+              <MessageSquareText size={18} className="shrink-0 text-teal" aria-hidden="true" />
+              Ask about your sources, state a claim to check, or ask for papers. For example:
+            </motion.div>
             {examples(project?.project.topics?.[0]).map((ex) => (
-              <button
+              <motion.button
                 key={ex}
                 type="button"
+                variants={staggerChild}
                 disabled={!canChat}
                 onClick={() => submit(ex)}
-                className="block w-full rounded-lg border border-line bg-white px-3 py-2 text-left text-sm text-ink hover:border-teal disabled:opacity-60"
+                className="block w-full rounded-lg border border-line bg-white px-3 py-2 text-left text-sm text-ink transition-colors hover:border-teal hover:bg-teal/5 disabled:opacity-60"
               >
                 {ex}
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          messages.map((m) => <ChatMessage key={m.id} projectId={projectId} message={m} />)
+          // initial={false}: history appears at once; only messages added later animate in
+          <AnimatePresence initial={false}>
+            {messages.map((m) => (
+              <ChatMessage key={m.id} projectId={projectId} message={m} />
+            ))}
+          </AnimatePresence>
         )}
         {send.isPending && (
           <>
@@ -114,12 +133,12 @@ export default function ChatPanel() {
           </>
         )}
         {failed && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800" role="alert">
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800" role="alert">
             Couldn't send “{failed.text.slice(0, 60)}”: {failed.error}{" "}
             <button type="button" className="font-semibold underline" onClick={() => submit(failed.text)}>
               Retry
             </button>
-          </div>
+          </motion.div>
         )}
         <div ref={bottomRef} />
       </div>
@@ -149,9 +168,9 @@ export default function ChatPanel() {
           <span className={`text-[11px] ${text.length > MAX ? "text-red-700" : "text-muted"}`}>
             {text.length}/{MAX}
           </span>
-          <button type="submit" className="btn-primary px-3 py-1 text-xs" disabled={!canChat || !text.trim() || text.length > MAX || send.isPending}>
+          <Button type="submit" variant="primary" size="sm" icon={Send} loading={send.isPending} disabled={!canChat || !text.trim() || text.length > MAX}>
             {send.isPending ? "Thinking…" : "Send"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

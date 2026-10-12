@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
+import { X } from "lucide-react";
+import Tabs from "../ui/Tabs.jsx";
+import { Skeleton } from "../ui/Skeleton.jsx";
 import { profileApi } from "../../api/profile.js";
 import { projectsApi } from "../../api/projects.js";
 import { toApiError } from "../../api/client.js";
@@ -29,16 +33,25 @@ function TopicChips({ projectId, topics, canEdit }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        {topics.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-xs text-teal">
-            {t}
-            {canEdit && (
-              <button type="button" aria-label={`Remove ${t}`} className="hover:text-red-700" onClick={() => save.mutate(topics.filter((x) => x !== t))}>
-                ×
-              </button>
-            )}
-          </span>
-        ))}
+        <AnimatePresence initial={false}>
+          {topics.map((t) => (
+            <motion.span
+              key={t}
+              layout
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-xs text-teal"
+            >
+              {t}
+              {canEdit && (
+                <button type="button" aria-label={`Remove ${t}`} className="rounded-full hover:text-red-700" onClick={() => save.mutate(topics.filter((x) => x !== t))}>
+                  <X size={12} />
+                </button>
+              )}
+            </motion.span>
+          ))}
+        </AnimatePresence>
         {!topics.length && <span className="text-xs text-muted">No topics yet.</span>}
       </div>
       {canEdit && topics.length < 10 && (
@@ -72,7 +85,14 @@ export default function ProfilePanel() {
     },
   });
 
-  if (isPending) return <p className="p-3 text-sm text-muted">Loading…</p>;
+  if (isPending)
+    return (
+      <div className="space-y-3 p-3" role="status" aria-label="Loading profile…">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-6 w-1/2 rounded-full" />
+      </div>
+    );
   if (error) return <p className="p-3 text-sm text-red-700">{toApiError(error).message}</p>;
 
   return (
@@ -89,19 +109,15 @@ export default function ProfilePanel() {
 
       <section className="space-y-1.5">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Level</h3>
-        <div className="flex gap-1">
-          {LEVELS.map((l) => (
-            <button
-              key={l}
-              type="button"
-              disabled={!canEdit || setLevel.isPending}
-              onClick={() => l !== profile.level && setLevel.mutate(l)}
-              className={clsx("rounded-full px-2.5 py-0.5 text-xs capitalize", profile.level === l ? "bg-navy text-white" : "bg-black/5 text-muted", canEdit && "hover:bg-black/10")}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
+        <fieldset disabled={!canEdit || setLevel.isPending} className="capitalize">
+          <Tabs
+            label="Level"
+            layoutId="profile-level"
+            value={profile.level}
+            onChange={(l) => l !== profile.level && setLevel.mutate(l)}
+            items={LEVELS.map((l) => ({ key: l, label: l }))}
+          />
+        </fieldset>
         {profile.goal && <p className="text-xs text-muted">Goal: {profile.goal}</p>}
       </section>
 
@@ -142,8 +158,8 @@ export default function ProfilePanel() {
                       </button>
                     ))}
                   </div>
-                  <button type="button" className="text-xs text-muted hover:text-red-700" aria-label={`Remove ${e.concept}`} onClick={() => update.mutate({ removeExclusion: e.id })}>
-                    ×
+                  <button type="button" className="rounded p-0.5 text-muted hover:bg-black/5 hover:text-red-700" aria-label={`Remove ${e.concept}`} onClick={() => update.mutate({ removeExclusion: e.id })}>
+                    <X size={14} />
                   </button>
                 </div>
                 {e.reason && <p className="mt-1 text-[11px] italic text-muted">From your feedback: “{e.reason}”</p>}

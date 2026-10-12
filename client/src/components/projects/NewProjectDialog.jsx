@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../../api/projects.js";
 import { toApiError } from "../../api/client.js";
+import Dialog, { FormError } from "../ui/Dialog.jsx";
+import Button from "../ui/Button.jsx";
+import Chip from "../ui/Chip.jsx";
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 const parseTopics = (s) => [...new Set(s.split(",").map((t) => t.trim()).filter(Boolean))];
@@ -24,37 +27,22 @@ export default function NewProjectDialog({ onClose }) {
   const error = create.error && toApiError(create.error);
   const fieldError = (name) => error?.issues?.find((i) => i.path === name || i.path.startsWith(`${name}.`))?.message;
 
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   function onSubmit(e) {
     e.preventDefault();
     create.mutate({ name: values.name, topics, level: values.level, goal: values.goal });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={onClose}>
-      <form
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="new-project-title"
-        onSubmit={onSubmit}
-        onMouseDown={(e) => e.stopPropagation()}
-        noValidate
-        className="card w-full max-w-md space-y-4"
-      >
-        <h2 id="new-project-title" className="text-lg font-semibold text-navy">
-          New project
-        </h2>
-
-        {error && !error.issues && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            {error.message}
-          </p>
-        )}
+    <Dialog
+      as="form"
+      title="New project"
+      description="Recommendations start from these topics and get sharper as you add sources."
+      onClose={onClose}
+      busy={create.isPending}
+      onSubmit={onSubmit}
+      noValidate
+    >
+        <FormError>{error && !error.issues && error.message}</FormError>
 
         <label className="block space-y-1">
           <span className="text-sm font-medium text-ink">Name</span>
@@ -73,9 +61,9 @@ export default function NewProjectDialog({ onClose }) {
           {topics.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {topics.map((t) => (
-                <span key={t} className="rounded-full bg-teal/10 px-2 py-0.5 text-xs text-teal">
+                <Chip key={t} className="bg-teal/10 text-teal">
                   {t}
-                </span>
+                </Chip>
               ))}
             </div>
           )}
@@ -104,14 +92,13 @@ export default function NewProjectDialog({ onClose }) {
         </label>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" className="btn-ghost" onClick={onClose}>
+          <Button onClick={onClose} disabled={create.isPending}>
             Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={create.isPending}>
+          </Button>
+          <Button type="submit" variant="primary" loading={create.isPending}>
             {create.isPending ? "Creating…" : "Create project"}
-          </button>
+          </Button>
         </div>
-      </form>
-    </div>
+    </Dialog>
   );
 }

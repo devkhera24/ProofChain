@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { Link } from "react-router";
 import clsx from "clsx";
+import { motion } from "motion/react";
 
 /** Agent text with [P-14] markers turned into citation chips (text is rendered as text, never HTML). */
 function WithCitations({ projectId, content, citations }) {
@@ -27,7 +28,14 @@ export default function ChatMessage({ projectId, message }) {
   const meta = message.meta ?? {};
   const dropped = meta.validation?.dropped ?? 0;
   return (
-    <div className={clsx("flex", mine ? "justify-end" : "justify-start")}>
+    <motion.div
+      layout="position"
+      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      style={{ originX: mine ? 1 : 0 }}
+      className={clsx("flex", mine ? "justify-end" : "justify-start")}
+    >
       <div
         className={clsx(
           "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm",
@@ -53,6 +61,6 @@ export default function ChatMessage({ projectId, message }) {
           </p>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

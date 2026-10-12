@@ -1,17 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import clsx from "clsx";
+import { AnimatePresence } from "motion/react";
+import { ArrowLeftRight, Check, Flag, X } from "lucide-react";
 import { STANCE, LINK_STATUS, TRANSITIONS } from "../../lib/evidence.js";
 import { SOURCE_TYPES } from "../../lib/sourceLabels.js";
 import { useReviewLink } from "../../hooks/useReviewLink.js";
 import { toApiError } from "../../api/client.js";
 import ReasonDialog from "../common/ReasonDialog.jsx";
+import Button from "../ui/Button.jsx";
+import Chip from "../ui/Chip.jsx";
 
 const ACTIONS = {
-  confirm: { label: "✓ Confirm", to: "confirmed" },
-  reject: { label: "✗ Reject", to: "rejected", reason: "Reject this evidence" },
-  stance: { label: "⇄ Change stance", reason: "Change the stance" },
-  dispute: { label: "⚑ Dispute", to: "disputed", reason: "Dispute this evidence" },
+  confirm: { label: "Confirm", to: "confirmed" },
+  reject: { label: "Reject", to: "rejected", reason: "Reject this evidence" },
+  stance: { label: "Change stance", reason: "Change the stance" },
+  dispute: { label: "Dispute", to: "disputed", reason: "Dispute this evidence" },
 };
 
 /** One piece of evidence: the real quote, where it comes from, how it was matched, and review actions. */
@@ -30,7 +34,7 @@ export default function LinkCard({ projectId, link, canReview, showClaim = false
   return (
     <article
       className={clsx(
-        "rounded-xl border-l-4 bg-white p-3 shadow-sm ring-1 ring-line",
+        "rounded-xl border-l-4 bg-white p-3 shadow-sm ring-1 ring-line transition-[border-color,opacity] duration-300",
         stance?.border,
         status?.dashed && "border-dashed",
         link.status === "rejected" && "opacity-60",
@@ -46,8 +50,13 @@ export default function LinkCard({ projectId, link, canReview, showClaim = false
       )}
 
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
-        <span className={clsx("rounded-full px-2 py-0.5 font-medium", stance?.bg, stance?.color)}>{stance?.label}</span>
-        <span className={clsx("rounded-full bg-black/5 px-2 py-0.5", status?.color ?? "text-muted")}>{status?.label}</span>
+        <Chip animateKey={link.stance} className={clsx("font-medium", stance?.bg, stance?.color)}>
+          {stance?.label}
+        </Chip>
+        <Chip animateKey={link.status} className={clsx("bg-black/5", status?.color ?? "text-muted", link.status === "confirmed" && "bg-supports/10 text-supports")}>
+          {link.status === "confirmed" && <Check size={12} aria-hidden="true" />}
+          {status?.label}
+        </Chip>
         <span className="font-mono text-muted">{link.humanId}</span>
         <span className="text-muted">·</span>
         <span className="font-mono text-muted">{passage.humanId}</span>
@@ -73,39 +82,41 @@ export default function LinkCard({ projectId, link, canReview, showClaim = false
           Open in source →
         </Link>
         {canReview && allowed.includes("confirmed") && (
-          <button type="button" className="btn-ghost px-2 py-1 text-xs text-supports" disabled={review.isPending} onClick={() => run({ status: "confirmed" })}>
+          <Button size="sm" icon={Check} className="text-supports hover:bg-supports/10" loading={review.isPending && review.variables?.status === "confirmed"} disabled={review.isPending} onClick={() => run({ status: "confirmed" }).catch(() => {})}>
             {ACTIONS.confirm.label}
-          </button>
+          </Button>
         )}
         {canReview && allowed.includes("rejected") && (
-          <button type="button" className="btn-ghost px-2 py-1 text-xs text-contradicts" onClick={() => setDialog("reject")}>
+          <Button size="sm" icon={X} className="text-contradicts hover:bg-contradicts/10" onClick={() => setDialog("reject")}>
             {ACTIONS.reject.label}
-          </button>
+          </Button>
         )}
         {canReview && link.status !== "rejected" && (
-          <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => setDialog("stance")}>
+          <Button size="sm" icon={ArrowLeftRight} onClick={() => setDialog("stance")}>
             {ACTIONS.stance.label}
-          </button>
+          </Button>
         )}
         {canReview && allowed.includes("disputed") && (
-          <button type="button" className="btn-ghost px-2 py-1 text-xs text-disputed" onClick={() => setDialog("dispute")}>
+          <Button size="sm" icon={Flag} className="text-disputed hover:bg-disputed/10" onClick={() => setDialog("dispute")}>
             {ACTIONS.dispute.label}
-          </button>
+          </Button>
         )}
       </div>
       {review.error && !dialog && <p className="mt-1 text-xs text-red-700">{toApiError(review.error).message}</p>}
 
+      <AnimatePresence>
       {dialog && (
         <ReasonDialog
           title={`${ACTIONS[dialog].reason} (${link.humanId})`}
           description={dialog === "stance" ? "The AI's label is kept in the history." : "Your reason is saved in the audit history."}
-          confirmLabel={ACTIONS[dialog].label.replace(/^\S+ /, "")}
+          confirmLabel={ACTIONS[dialog].label}
           withStance={dialog === "stance"}
           currentStance={link.stance}
           onSubmit={({ reason, stance: newStance }) => run(dialog === "stance" ? { stance: newStance, reason } : { status: ACTIONS[dialog].to, reason })}
           onClose={() => setDialog(null)}
         />
       )}
+      </AnimatePresence>
     </article>
   );
 }

@@ -1,7 +1,10 @@
-export default function Spinner({ label = "Loading…" }) {
+import { Loader2 } from "lucide-react";
+
+/** `inline` fits inside panels; the default fills half the screen for page-level loading. */
+export default function Spinner({ label = "Loading…", inline = false }) {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center gap-3 text-sm text-muted" role="status">
-      <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-teal" />
+    <div className={`flex items-center justify-center gap-2.5 text-sm text-muted ${inline ? "py-8" : "min-h-[50vh]"}`} role="status">
+      <Loader2 size={18} className="animate-spin text-teal motion-reduce:animate-none" aria-hidden="true" />
       {label}
     </div>
   );

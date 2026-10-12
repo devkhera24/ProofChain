@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
+import { ListChecks, Plus } from "lucide-react";
 import { claimsApi } from "../../api/claims.js";
 import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
 import { NEEDS_REVIEW } from "../../lib/evidence.js";
 import StateMessage from "../common/StateMessage.jsx";
 import { ClaimStatus, StanceCounts, GapBadges } from "./ClaimBits.jsx";
+import Button from "../ui/Button.jsx";
+import Tabs from "../ui/Tabs.jsx";
+import { ListSkeleton } from "../ui/Skeleton.jsx";
+import { listItem } from "../../lib/motion.js";
 
 const FILTERS = {
   all: { label: "All", test: () => true },
@@ -47,11 +52,17 @@ function AddClaim({ projectId }) {
           maxLength={500}
           aria-label="New claim"
         />
-        <button type="submit" className="btn-primary shrink-0" disabled={add.isPending || text.trim().length < 10}>
+        <Button type="submit" variant="primary" icon={Plus} className="shrink-0" loading={add.isPending} disabled={text.trim().length < 10}>
           {add.isPending ? "Adding…" : "Add claim"}
-        </button>
+        </Button>
       </div>
-      {notice && <p className="text-xs text-teal">{notice}</p>}
+      <AnimatePresence>
+        {notice && (
+          <motion.p key={notice} className="text-xs text-teal" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+            {notice}
+          </motion.p>
+        )}
+      </AnimatePresence>
       {add.error && <p className="text-xs text-red-700">{toApiError(add.error).message}</p>}
     </form>
   );
@@ -77,27 +88,17 @@ export default function ClaimsList() {
       {canEdit && <AddClaim projectId={projectId} />}
 
       {claims?.length > 0 && (
-        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filter claims">
-          {Object.entries(FILTERS).map(([key, f]) => {
-            const n = claims.filter(f.test).length;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={filter === key}
-                onClick={() => setFilter(key)}
-                className={clsx("rounded-full px-3 py-1 text-xs", filter === key ? "bg-navy text-white" : "bg-black/5 text-muted hover:bg-black/10")}
-              >
-                {f.label} {key !== "all" && `(${n})`}
-              </button>
-            );
-          })}
-        </div>
+        <Tabs
+          label="Filter claims"
+          layoutId="claims-filter"
+          value={filter}
+          onChange={setFilter}
+          items={Object.entries(FILTERS).map(([key, f]) => ({ key, label: f.label, count: key === "all" ? undefined : claims.filter(f.test).length }))}
+        />
       )}
 
       {isPending ? (
-        <StateMessage kind="loading" title="Loading claims…" />
+        <ListSkeleton label="Loading claims…" />
       ) : error ? (
         <StateMessage
           kind="error"
@@ -111,16 +112,17 @@ export default function ClaimsList() {
           {toApiError(error).message}
         </StateMessage>
       ) : !claims.length ? (
-        <StateMessage title="No claims yet">
+        <StateMessage icon={ListChecks} title="No claims yet">
           Claims are extracted automatically when you add sources, or you can write your own above.
         </StateMessage>
       ) : !shown.length ? (
         <StateMessage title="Nothing matches this filter" />
       ) : (
         <ul className="space-y-2">
+          <AnimatePresence initial={false}>
           {shown.map((c) => (
-            <li key={c.id}>
-              <Link to={`/projects/${projectId}/claims/${c.id}`} className="card block space-y-2 transition hover:border-teal">
+            <motion.li key={c.id} layout="position" {...listItem}>
+              <Link to={`/projects/${projectId}/claims/${c.id}`} className="card block space-y-2 transition hover:-translate-y-px hover:border-teal hover:shadow-md motion-reduce:hover:translate-y-0">
                 <div className="flex items-start gap-3">
                   <span className="font-mono text-sm font-medium text-navy">{c.humanId}</span>
                   <span className="flex-1 text-sm text-ink">{c.text}</span>
@@ -129,15 +131,16 @@ export default function ClaimsList() {
                   <ClaimStatus claim={c} />
                   <StanceCounts byStance={c.links.byStance} />
                   {NEEDS_REVIEW.some((s) => c.links.byStatus[s] > 0) && (
-                    <span className="text-xs text-disputed">
+                    <span className="text-xs font-medium text-disputed">
                       {NEEDS_REVIEW.reduce((n, s) => n + (c.links.byStatus[s] ?? 0), 0)} to review
                     </span>
                   )}
                   <GapBadges gaps={c.gaps} />
                 </div>
               </Link>
-            </li>
+            </motion.li>
           ))}
+          </AnimatePresence>
         </ul>
       )}
     </div>

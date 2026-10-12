@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
+import { ArrowLeft } from "lucide-react";
 import { sourcesApi } from "../../api/sources.js";
 import { linksApi } from "../../api/links.js";
 import { STANCE } from "../../lib/evidence.js";
@@ -60,8 +61,8 @@ export default function SourceViewer() {
   }, [target, segments]);
 
   const back = (
-    <Link to={`/projects/${projectId}/sources`} className="text-sm text-teal hover:underline">
-      ← All sources
+    <Link to={`/projects/${projectId}/sources`} className="inline-flex items-center gap-1 text-sm text-teal hover:underline">
+      <ArrowLeft size={14} aria-hidden="true" /> All sources
     </Link>
   );
 
@@ -80,7 +81,7 @@ export default function SourceViewer() {
     <article className="mx-auto max-w-3xl">
       <div className="mb-4">{back}</div>
       <header className="mb-6 space-y-1">
-        <h2 className="text-xl font-semibold text-navy">{s.title}</h2>
+        <h2 className="text-2xl font-semibold leading-tight tracking-tight text-navy">{s.title}</h2>
         <p className="text-sm text-muted">
           {[s.authors?.join(", "), s.year, SOURCE_TYPES[s.sourceType], DEPTH_LABELS[s.depth], `${s.passageCount} passages`]
             .filter(Boolean)
@@ -103,7 +104,7 @@ export default function SourceViewer() {
         </StateMessage>
       ) : (
         // Text is rendered as React text nodes — never as HTML
-        <div ref={textRef} className="card whitespace-pre-wrap text-[15px] leading-7 text-ink">
+        <div ref={textRef} className="card whitespace-pre-wrap p-6 text-[15px] leading-7 text-ink sm:p-8">
           {segments.map((seg) => {
             const page = pageStarts.length > 1 ? pageAt.get(seg.start) : null;
             return (

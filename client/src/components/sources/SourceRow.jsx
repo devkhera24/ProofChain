@@ -4,6 +4,9 @@ import clsx from "clsx";
 import { sourcesApi } from "../../api/sources.js";
 import { toApiError } from "../../api/client.js";
 import { SOURCE_TYPES, DEPTH_LABELS, STATUS_STYLES } from "../../lib/sourceLabels.js";
+import { Loader2, RotateCw, Trash2 } from "lucide-react";
+import Chip from "../ui/Chip.jsx";
+import Button from "../ui/Button.jsx";
 
 const Badge = ({ className, children }) => (
   <span className={clsx("rounded-full px-2 py-0.5 text-xs", className ?? "bg-black/5 text-muted")}>{children}</span>
@@ -18,6 +21,7 @@ export default function SourceRow({ projectId, source, canEdit }) {
   const error = [update, retry, remove].find((m) => m.error)?.error;
 
   const ready = source.status === "ready";
+  const busy = ["queued", "processing"].includes(source.status);
   const title = ready ? (
     <Link to={`/projects/${projectId}/sources/${source.id}`} className="font-medium text-navy hover:underline">
       {source.title}
@@ -27,15 +31,16 @@ export default function SourceRow({ projectId, source, canEdit }) {
   );
 
   return (
-    <li className="card space-y-2">
+    <div className="card space-y-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate">{title}</div>
           <p className="truncate text-xs text-muted">{source.url ?? source.fileName}</p>
         </div>
-        <Badge className={STATUS_STYLES[source.status]}>
+        <Chip animateKey={source.status} className={clsx("capitalize", STATUS_STYLES[source.status])}>
+          {busy && <Loader2 size={12} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
           {source.status === "processing" ? "Processing…" : source.status}
-        </Badge>
+        </Chip>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -60,14 +65,15 @@ export default function SourceRow({ projectId, source, canEdit }) {
         {ready && <Badge>{source.passageCount} passages</Badge>}
         {source.year && <Badge>{source.year}</Badge>}
         {canEdit && (
-          <button
-            type="button"
-            className="ml-auto text-xs text-muted hover:text-red-700"
-            disabled={remove.isPending}
+          <Button
+            size="sm"
+            icon={Trash2}
+            className="ml-auto text-muted hover:text-red-700"
+            loading={remove.isPending}
             onClick={() => window.confirm(`Remove "${source.title}" and its passages?`) && remove.mutate()}
           >
             {remove.isPending ? "Removing…" : "Remove"}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -75,13 +81,13 @@ export default function SourceRow({ projectId, source, canEdit }) {
         <div className="flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
           <span>{source.error ?? "Processing failed."}</span>
           {canEdit && (
-            <button type="button" className="btn-ghost shrink-0 text-red-800" disabled={retry.isPending} onClick={() => retry.mutate()}>
+            <Button size="sm" icon={RotateCw} className="shrink-0 text-red-800 hover:bg-red-100" loading={retry.isPending} onClick={() => retry.mutate()}>
               {retry.isPending ? "Retrying…" : "Retry"}
-            </button>
+            </Button>
           )}
         </div>
       )}
       {error && <p className="text-xs text-red-700">{toApiError(error).message}</p>}
-    </li>
+    </div>
   );
 }

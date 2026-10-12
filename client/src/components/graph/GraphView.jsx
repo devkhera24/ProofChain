@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
+import { Network, X } from "lucide-react";
 import { graphApi } from "../../api/graph.js";
 import { claimsApi } from "../../api/claims.js";
 import { sourcesApi } from "../../api/sources.js";
@@ -13,6 +14,8 @@ import { SOURCE_TYPES } from "../../lib/sourceLabels.js";
 import StateMessage from "../common/StateMessage.jsx";
 import LinkCard from "../claims/LinkCard.jsx";
 import EvidenceGraph, { TYPE_COLOR } from "./EvidenceGraph.jsx";
+import Tabs from "../ui/Tabs.jsx";
+import { ease } from "../../lib/motion.js";
 
 const VIEWS = [
   ["all", "All", {}],
@@ -59,11 +62,16 @@ function LinkDrawer({ projectId, claimId, linkId, canReview }) {
 function Drawer({ projectId, selection, canReview, onClose }) {
   const { kind, data } = selection;
   return (
-    <aside className="w-full shrink-0 space-y-3 rounded-xl border border-line bg-white p-3 lg:w-80">
+    <motion.aside
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0, transition: { duration: 0.24, ease } }}
+      exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
+      className="w-full shrink-0 space-y-3 overflow-auto rounded-xl border border-line bg-white p-3 shadow-sm lg:w-80"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-navy">{kind === "claim" ? `Claim ${data.label}` : kind === "passage" ? `Passage ${data.label}` : `Evidence ${data.label}`}</h3>
-        <button type="button" className="text-muted hover:text-ink" onClick={onClose} aria-label="Close">
-          ✕
+        <button type="button" className="-m-1 rounded-md p-1 text-muted hover:bg-black/5 hover:text-ink" onClick={onClose} aria-label="Close">
+          <X size={16} />
         </button>
       </div>
       {kind === "claim" && (
@@ -92,7 +100,7 @@ function Drawer({ projectId, selection, canReview, onClose }) {
         </>
       )}
       {kind === "link" && <LinkDrawer projectId={projectId} claimId={data.target.split(":")[1]} linkId={data.linkId} canReview={canReview} />}
-    </aside>
+    </motion.aside>
   );
 }
 
@@ -117,16 +125,7 @@ export default function GraphView() {
   return (
     <div className="flex h-full flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {VIEWS.map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setView(key)}
-            className={clsx("rounded-full px-3 py-1 text-xs", view === key ? "bg-navy text-white" : "bg-black/5 text-muted hover:bg-black/10")}
-          >
-            {label}
-          </button>
-        ))}
+        <Tabs label="Graph view" layoutId="graph-view" value={view} onChange={setView} items={VIEWS.map(([key, label]) => ({ key, label }))} />
         <select className="rounded-full border border-line bg-white px-2 py-1 text-xs" value={sourceId} onChange={(e) => setSourceId(e.target.value)} aria-label="Filter by source">
           <option value="">All sources</option>
           {sources.data?.filter((s) => s.status === "ready").map((s) => (
@@ -144,7 +143,7 @@ export default function GraphView() {
           ))}
         </select>
         {graph.data && (
-          <span className="ml-auto text-xs text-muted">
+          <span className="ml-auto text-xs tabular-nums text-muted">
             {graph.data.counts.claims} claims · {graph.data.counts.passages} passages · {graph.data.counts.links} links
           </span>
         )}
@@ -159,10 +158,10 @@ export default function GraphView() {
       ) : graph.error ? (
         <StateMessage kind="error" title="Couldn't load the graph">{toApiError(graph.error).message}</StateMessage>
       ) : !elements.length ? (
-        <StateMessage title={view === "all" && !sourceId && !claimId ? "Add sources and claims to see the evidence graph" : "Nothing matches these filters"} />
+        <StateMessage icon={Network} title={view === "all" && !sourceId && !claimId ? "Add sources and claims to see the evidence graph" : "Nothing matches these filters"} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
-          <div className="min-h-[480px] flex-1">
+          <div className="min-h-[480px] flex-1 overflow-hidden rounded-xl border border-line bg-white">
             <EvidenceGraph
               elements={elements}
               onSelectClaim={(data) => setSelection({ kind: "claim", data })}
@@ -171,7 +170,9 @@ export default function GraphView() {
               onClear={() => setSelection(null)}
             />
           </div>
-          {selection && <Drawer projectId={projectId} selection={selection} canReview={canReview} onClose={() => setSelection(null)} />}
+          <AnimatePresence>
+            {selection && <Drawer key="drawer" projectId={projectId} selection={selection} canReview={canReview} onClose={() => setSelection(null)} />}
+          </AnimatePresence>
         </div>
       )}
     </div>

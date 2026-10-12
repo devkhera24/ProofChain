@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
+import { BadgeCheck, BookmarkPlus, BookOpenCheck, ChevronDown, Plus, ThumbsDown } from "lucide-react";
+import Button from "../ui/Button.jsx";
 import { SLOT, VERIFIED_LABEL, FEEDBACK_LABEL, formatAuthors } from "../../lib/recommendations.js";
 import { GAP_LABEL } from "../../lib/evidence.js";
 
@@ -17,10 +20,14 @@ export default function PaperCard({ projectId, item, canAct, pending, onAction }
   const link = paper.url ?? (paper.ids?.doi ? `https://doi.org/${paper.ids.doi}` : null);
 
   return (
-    <article className={clsx("rounded-xl border border-line bg-white p-3 shadow-sm", pending && "opacity-60")}>
+    <article className={clsx("rounded-xl border border-line bg-white p-3 shadow-sm transition hover:shadow-md", pending && "opacity-60")}>
       <div className="flex items-center gap-2">
         <span className={clsx("rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide", slot.className)}>{slot.label}</span>
-        {done && <span className="text-xs text-teal">{FEEDBACK_LABEL[done]}</span>}
+        {done && (
+          <motion.span initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} className="text-xs font-medium text-teal">
+            {FEEDBACK_LABEL[done]}
+          </motion.span>
+        )}
       </div>
 
       <h3 className="mt-2 text-sm font-semibold leading-snug text-ink">
@@ -41,10 +48,23 @@ export default function PaperCard({ projectId, item, canAct, pending, onAction }
         <span className="font-medium">Why this paper: </span>
         {item.rationale}
       </p>
-      <button type="button" className="mt-1 text-xs text-supports hover:underline" onClick={() => setShowQuote((s) => !s)} aria-expanded={showQuote}>
-        ✓ Explanation found in abstract {showQuote ? "▴" : "▾"}
+      <button type="button" className="mt-1 inline-flex items-center gap-1 text-xs text-supports hover:underline" onClick={() => setShowQuote((s) => !s)} aria-expanded={showQuote}>
+        <BadgeCheck size={13} aria-hidden="true" /> Explanation found in abstract
+        <ChevronDown size={13} className={clsx("transition-transform", showQuote && "rotate-180")} aria-hidden="true" />
       </button>
-      {showQuote && <blockquote className="mt-1 border-l-2 border-supports/40 pl-2 text-xs text-ink">“{item.rationaleQuote}”</blockquote>}
+      <AnimatePresence initial={false}>
+        {showQuote && (
+          <motion.blockquote
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-1 overflow-hidden border-l-2 border-supports/40 pl-2 text-xs text-ink"
+          >
+            “{item.rationaleQuote}”
+          </motion.blockquote>
+        )}
+      </AnimatePresence>
 
       {item.gapTargets?.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
@@ -70,22 +90,24 @@ export default function PaperCard({ projectId, item, canAct, pending, onAction }
 
       {canAct && !rejecting && (
         <div className="mt-3 flex flex-wrap gap-1">
-          <button type="button" className="btn-primary px-2 py-1 text-xs" disabled={pending || done === "added"} onClick={() => onAction({ action: "added" })}>
+          <Button variant="primary" size="sm" icon={Plus} disabled={pending || done === "added"} onClick={() => onAction({ action: "added" })}>
             {done === "added" ? "Added" : "Add to project"}
-          </button>
-          <button type="button" className="btn-ghost px-2 py-1 text-xs" disabled={pending} onClick={() => setRejecting(true)}>
+          </Button>
+          <Button size="sm" icon={ThumbsDown} disabled={pending} onClick={() => setRejecting(true)}>
             Not relevant
-          </button>
-          <button type="button" className="btn-ghost px-2 py-1 text-xs" disabled={pending || done === "read"} onClick={() => onAction({ action: "read" })}>
+          </Button>
+          <Button size="sm" icon={BookOpenCheck} disabled={pending || done === "read"} onClick={() => onAction({ action: "read" })}>
             Already read
-          </button>
-          <button type="button" className="btn-ghost px-2 py-1 text-xs" disabled={pending || done === "later"} onClick={() => onAction({ action: "later" })}>
+          </Button>
+          <Button size="sm" icon={BookmarkPlus} disabled={pending || done === "later"} onClick={() => onAction({ action: "later" })}>
             Save for later
-          </button>
+          </Button>
         </div>
       )}
       {rejecting && (
-        <form
+        <motion.form
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
           className="mt-3 space-y-2"
           onSubmit={(e) => {
             e.preventDefault();
@@ -111,7 +133,7 @@ export default function PaperCard({ projectId, item, canAct, pending, onAction }
               Not relevant
             </button>
           </div>
-        </form>
+        </motion.form>
       )}
     </article>
   );

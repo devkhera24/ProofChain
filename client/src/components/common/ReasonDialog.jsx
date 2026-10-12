@@ -1,21 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import clsx from "clsx";
 import { STANCE, STANCE_ORDER } from "../../lib/evidence.js";
+import Dialog, { FormError } from "../ui/Dialog.jsx";
+import Button from "../ui/Button.jsx";
 
 /**
  * Asks for a reason (required) and optionally a new stance.
  * onSubmit({ reason, stance? }) may return a promise; errors are shown in the dialog.
+ * Render inside <AnimatePresence> so it animates out.
  */
 export default function ReasonDialog({ title, description, confirmLabel = "Save", withStance, currentStance, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
   const [stance, setStance] = useState(withStance ? STANCE_ORDER.find((s) => s !== currentStance) : undefined);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && !pending && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, pending]);
 
   async function submit(e) {
     e.preventDefault();
@@ -32,68 +30,50 @@ export default function ReasonDialog({ title, description, confirmLabel = "Save"
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={() => !pending && onClose()}>
-      <form
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reason-title"
-        onSubmit={submit}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="card w-full max-w-md space-y-4"
-      >
-        <div>
-          <h2 id="reason-title" className="text-lg font-semibold text-navy">
-            {title}
-          </h2>
-          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
-        </div>
+    <Dialog as="form" title={title} description={description} onClose={onClose} busy={pending} onSubmit={submit}>
+      {withStance && (
+        <fieldset className="space-y-1.5">
+          <legend className="text-sm font-medium text-ink">New stance</legend>
+          <div className="flex gap-2">
+            {STANCE_ORDER.map((s) => (
+              <label
+                key={s}
+                className={clsx(
+                  "flex-1 cursor-pointer rounded-lg border px-2 py-1.5 text-center text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal/40",
+                  stance === s ? [STANCE[s].border, STANCE[s].bg, STANCE[s].color, "font-medium"] : "border-line text-muted hover:border-black/20",
+                  s === currentStance && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <input type="radio" name="stance" value={s} checked={stance === s} disabled={s === currentStance} onChange={() => setStance(s)} className="sr-only" />
+                {STANCE[s].label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
-        {withStance && (
-          <fieldset className="space-y-1">
-            <legend className="text-sm font-medium text-ink">New stance</legend>
-            <div className="flex gap-2">
-              {STANCE_ORDER.map((s) => (
-                <label
-                  key={s}
-                  className={`flex-1 cursor-pointer rounded-lg border px-2 py-1.5 text-center text-sm ${
-                    stance === s ? `${STANCE[s].border} ${STANCE[s].bg} ${STANCE[s].color} font-medium` : "border-line text-muted"
-                  } ${s === currentStance ? "opacity-50" : ""}`}
-                >
-                  <input type="radio" name="stance" value={s} checked={stance === s} disabled={s === currentStance} onChange={() => setStance(s)} className="sr-only" />
-                  {STANCE[s].label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )}
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-ink">Reason</span>
+        <textarea
+          className="input min-h-20"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g. The passage is about a different workload"
+          maxLength={500}
+          autoFocus
+        />
+      </label>
 
-        <label className="block space-y-1">
-          <span className="text-sm font-medium text-ink">Reason</span>
-          <textarea
-            className="input min-h-20"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. The passage is about a different workload"
-            maxLength={500}
-            autoFocus
-          />
-        </label>
+      <FormError>{error}</FormError>
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={pending}>
-            Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={pending}>
-            {pending ? "Saving…" : confirmLabel}
-          </button>
-        </div>
-      </form>
-    </div>
+      <div className="flex justify-end gap-2">
+        <Button onClick={onClose} disabled={pending}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" loading={pending}>
+          {pending ? "Saving…" : confirmLabel}
+        </Button>
+      </div>
+    </Dialog>
   );
 }

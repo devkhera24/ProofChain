@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { toApiError } from "../../api/client.js";
+import { motion } from "motion/react";
 import ServerStatusBanner from "../common/ServerStatusBanner.jsx";
+import Logo from "../common/Logo.jsx";
+import Button from "../ui/Button.jsx";
+import { FormError } from "../ui/Dialog.jsx";
+import { ease } from "../../lib/motion.js";
 
 const MODES = {
   login: {
@@ -60,15 +65,22 @@ export default function AuthForm({ mode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <ServerStatusBanner />
-      <div className="flex flex-1 items-center justify-center p-4">
-        <form onSubmit={onSubmit} noValidate className="card w-full max-w-sm space-y-4">
-          <h1 className="text-xl font-semibold text-navy">{config.title}</h1>
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-4">
+        <div className="text-center">
+          <Logo className="text-2xl" />
+          <p className="mt-1 text-sm text-muted">Every claim, traced back to the passage that supports it.</p>
+        </div>
+        <motion.form
+          key={mode}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease } }}
+          onSubmit={onSubmit}
+          noValidate
+          className="card w-full max-w-sm space-y-4 p-6 shadow-md"
+        >
+          <h1 className="text-xl font-semibold tracking-tight text-navy">{config.title}</h1>
 
-          {error && !error.issues && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-              {error.message}
-            </p>
-          )}
+          <FormError>{error && !error.issues && error.message}</FormError>
 
           {config.fields.map((name) => {
             const { label, ...props } = FIELD_PROPS[name];
@@ -94,9 +106,9 @@ export default function AuthForm({ mode }) {
             );
           })}
 
-          <button type="submit" className="btn-primary w-full justify-center" disabled={pending}>
+          <Button type="submit" variant="primary" className="w-full" loading={pending}>
             {pending ? config.pending : config.submit}
-          </button>
+          </Button>
 
           <p className="text-sm text-muted">
             {config.switchText}{" "}
@@ -104,7 +116,7 @@ export default function AuthForm({ mode }) {
               {config.switchLink.label}
             </Link>
           </p>
-        </form>
+        </motion.form>
       </div>
     </div>
   );

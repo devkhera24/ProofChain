@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+import { Library, Plus } from "lucide-react";
+import Button from "../ui/Button.jsx";
+import { ListSkeleton } from "../ui/Skeleton.jsx";
+import { listItem } from "../../lib/motion.js";
 import { sourcesApi } from "../../api/sources.js";
 import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
@@ -23,13 +28,13 @@ export default function SourcesList() {
   });
 
   const addButton = canEdit && (
-    <button type="button" className="btn-primary" onClick={() => setAdding(true)}>
+    <Button variant="primary" icon={Plus} onClick={() => setAdding(true)}>
       Add source
-    </button>
+    </Button>
   );
 
   let content;
-  if (isPending) content = <StateMessage kind="loading" title="Loading sources…" />;
+  if (isPending) content = <ListSkeleton rows={3} label="Loading sources…" />;
   else if (error)
     content = (
       <StateMessage
@@ -46,16 +51,20 @@ export default function SourcesList() {
     );
   else if (!sources.length)
     content = (
-      <StateMessage title="No sources yet" action={addButton}>
+      <StateMessage icon={Library} title="No sources yet" action={addButton}>
         Add web pages or PDFs. Each one is split into numbered passages you can cite.
       </StateMessage>
     );
   else
     content = (
       <ul className="space-y-3">
-        {sources.map((s) => (
-          <SourceRow key={s.id} projectId={projectId} source={s} canEdit={canEdit} />
-        ))}
+        <AnimatePresence initial={false}>
+          {sources.map((s) => (
+            <motion.li key={s.id} layout="position" {...listItem}>
+              <SourceRow projectId={projectId} source={s} canEdit={canEdit} />
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
     );
 
@@ -66,7 +75,7 @@ export default function SourcesList() {
         {sources?.length > 0 && addButton}
       </div>
       {content}
-      {adding && <AddSourceDialog projectId={projectId} onClose={() => setAdding(false)} />}
+      <AnimatePresence>{adding && <AddSourceDialog projectId={projectId} onClose={() => setAdding(false)} />}</AnimatePresence>
     </div>
   );
 }

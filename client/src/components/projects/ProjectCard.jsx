@@ -3,9 +3,9 @@ import { timeAgo } from "../../lib/format.js";
 
 export default function ProjectCard({ project }) {
   return (
-    <Link to={`/projects/${project.id}`} className="card block transition hover:border-teal hover:shadow-md">
+    <Link to={`/projects/${project.id}`} className="card block h-full transition duration-200 hover:-translate-y-0.5 hover:border-teal hover:shadow-md motion-reduce:hover:translate-y-0">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="font-semibold text-navy">{project.name}</h2>
+        <h2 className="font-semibold leading-snug text-navy">{project.name}</h2>
         <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-xs capitalize text-muted">{project.role}</span>
       </div>
       {project.goal && <p className="mt-1 line-clamp-2 text-sm text-muted">{project.goal}</p>}

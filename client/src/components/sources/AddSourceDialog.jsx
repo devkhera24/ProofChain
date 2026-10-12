@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import clsx from "clsx";
+import { Globe, FileText } from "lucide-react";
 import { sourcesApi } from "../../api/sources.js";
 import { toApiError } from "../../api/client.js";
+import Dialog, { FormError } from "../ui/Dialog.jsx";
+import Button from "../ui/Button.jsx";
+import Tabs from "../ui/Tabs.jsx";
+import { useToast } from "../ui/Toast.jsx";
 
 const MAX_MB = 15; // matches the server's MAX_UPLOAD_MB default
 
@@ -23,26 +27,22 @@ const friendlyError = (err) => {
 
 export default function AddSourceDialog({ projectId, onClose }) {
   const qc = useQueryClient();
+  const toast = useToast();
   const [tab, setTab] = useState("url");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [localError, setLocalError] = useState(null);
 
-  const done = () => {
+  const done = (source) => {
     qc.invalidateQueries({ queryKey: ["sources", projectId] });
+    toast({ text: `Added “${source?.title ?? "source"}”. It's being split into passages…` });
     onClose();
   };
   const addUrl = useMutation({ mutationFn: (u) => sourcesApi.addUrl(projectId, u), onSuccess: done });
   const upload = useMutation({ mutationFn: (f) => sourcesApi.upload(projectId, f, setProgress), onSuccess: done });
   const active = tab === "url" ? addUrl : upload;
   const error = localError ?? (active.error && friendlyError(active.error));
-
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && !active.isPending && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, active.isPending]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -66,37 +66,19 @@ export default function AddSourceDialog({ projectId, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={() => !active.isPending && onClose()}>
-      <form
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-source-title"
-        onSubmit={onSubmit}
-        onMouseDown={(e) => e.stopPropagation()}
-        noValidate
-        className="card w-full max-w-md space-y-4"
-      >
-        <h2 id="add-source-title" className="text-lg font-semibold text-navy">
-          Add a source
-        </h2>
-
-        <div className="flex gap-1 rounded-lg bg-black/5 p-1" role="tablist">
-          {[
-            ["url", "Web page"],
-            ["pdf", "PDF"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => switchTab(key)}
-              className={clsx("flex-1 rounded-md py-1.5 text-sm", tab === key ? "bg-white font-medium text-navy shadow-sm" : "text-muted")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+    <Dialog as="form" title="Add a source" onClose={onClose} busy={active.isPending} onSubmit={onSubmit} noValidate>
+        <Tabs
+          variant="segment"
+          fill
+          layoutId="add-source-tab"
+          label="Source kind"
+          value={tab}
+          onChange={switchTab}
+          items={[
+            { key: "url", label: "Web page", icon: Globe },
+            { key: "pdf", label: "PDF", icon: FileText },
+          ]}
+        />
 
         {tab === "url" ? (
           <label className="block space-y-1">
@@ -125,7 +107,7 @@ export default function AddSourceDialog({ projectId, onClose }) {
             {upload.isPending && (
               <div className="pt-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-black/5">
-                  <div className="h-full bg-teal transition-all" style={{ width: `${progress}%` }} />
+                  <div className="h-full bg-teal transition-[width] duration-200" style={{ width: `${progress}%` }} />
                 </div>
                 <span className="text-xs text-muted">
                   {progress < 100 ? `Uploading… ${progress}%` : "Reading the PDF…"}
@@ -135,21 +117,16 @@ export default function AddSourceDialog({ projectId, onClose }) {
           </label>
         )}
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            {error}
-          </p>
-        )}
+        <FormError>{error}</FormError>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={active.isPending}>
+          <Button onClick={onClose} disabled={active.isPending}>
             Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={active.isPending}>
+          </Button>
+          <Button type="submit" variant="primary" loading={active.isPending}>
             {active.isPending ? "Adding…" : "Add source"}
-          </button>
+          </Button>
         </div>
-      </form>
-    </div>
+    </Dialog>
   );
 }

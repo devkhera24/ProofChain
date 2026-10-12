@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft, Pencil, Search, Trash2 } from "lucide-react";
+import Button from "../ui/Button.jsx";
+import { Skeleton } from "../ui/Skeleton.jsx";
+import { listItem } from "../../lib/motion.js";
 import { claimsApi } from "../../api/claims.js";
 import { linksApi } from "../../api/links.js";
 import { toApiError } from "../../api/client.js";
@@ -63,11 +68,11 @@ function EditableText({ projectId, claim, canEdit }) {
   if (!editing)
     return (
       <div className="flex items-start gap-2">
-        <p className="flex-1 text-lg text-ink">{claim.text}</p>
+        <p className="flex-1 text-lg leading-snug text-ink">{claim.text}</p>
         {canEdit && (
-          <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => (setDraft(claim.text), setEditing(true))}>
+          <Button size="sm" icon={Pencil} onClick={() => (setDraft(claim.text), setEditing(true))}>
             Edit
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -82,6 +87,7 @@ function EditableText({ projectId, claim, canEdit }) {
           Save
         </button>
       </div>
+      <AnimatePresence>
       {asking && (
         <ReasonDialog
           title={`Edit ${claim.humanId}`}
@@ -94,6 +100,7 @@ function EditableText({ projectId, claim, canEdit }) {
           onClose={() => setAsking(false)}
         />
       )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -119,11 +126,22 @@ export default function ClaimDetail() {
   });
 
   const back = (
-    <Link to={`/projects/${projectId}/claims`} className="text-sm text-teal hover:underline">
-      ← All claims
+    <Link to={`/projects/${projectId}/claims`} className="inline-flex items-center gap-1 text-sm text-teal hover:underline">
+      <ArrowLeft size={14} aria-hidden="true" /> All claims
     </Link>
   );
-  if (isPending) return <StateMessage kind="loading" title="Loading claim…" />;
+  if (isPending)
+    return (
+      <div className="mx-auto max-w-5xl space-y-4" role="status" aria-label="Loading claim…">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-6 w-3/4" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
   if (error)
     return (
       <StateMessage kind="error" title={toApiError(error).status === 404 ? "Claim not found" : "Couldn't load this claim"} action={back}>
@@ -145,16 +163,18 @@ export default function ClaimDetail() {
           <GapBadges gaps={claim.gaps} />
           {canEdit && (
             <span className="ml-auto flex gap-1">
-              <button type="button" className="btn-ghost px-2 py-1 text-xs" disabled={relink.isPending || relink.isSuccess} onClick={() => relink.mutate()}>
+              <Button size="sm" icon={Search} loading={relink.isPending} disabled={relink.isSuccess} onClick={() => relink.mutate()}>
                 {relink.isSuccess ? "Searching…" : "Find more evidence"}
-              </button>
-              <button
-                type="button"
-                className="btn-ghost px-2 py-1 text-xs text-red-700"
+              </Button>
+              <Button
+                size="sm"
+                icon={Trash2}
+                className="text-red-700 hover:bg-red-50"
+                loading={remove.isPending}
                 onClick={() => window.confirm(`Delete ${claim.humanId} and its evidence links?`) && remove.mutate()}
               >
                 Delete
-              </button>
+              </Button>
             </span>
           )}
         </div>
@@ -170,11 +190,19 @@ export default function ClaimDetail() {
             const col = active.filter((l) => l.stance === s);
             return (
               <section key={s} className="space-y-2">
-                <h3 className={`text-sm font-semibold ${STANCE[s].color}`}>
-                  {STANCE[s].label} ({col.length})
+                <h3 className={`flex items-center gap-1.5 text-sm font-semibold ${STANCE[s].color}`}>
+                  <span className={`h-2 w-2 rounded-full ${STANCE[s].dot}`} aria-hidden="true" />
+                  {STANCE[s].label} <span className="tabular-nums font-normal opacity-80">({col.length})</span>
                 </h3>
                 {col.length ? (
-                  col.map((l) => <LinkCard key={l.id} projectId={projectId} link={l} canReview={canEdit} />)
+                  // A stance change moves the card between columns; layout animates the rest into place
+                  <AnimatePresence initial={false}>
+                    {col.map((l) => (
+                      <motion.div key={l.id} layout="position" {...listItem}>
+                        <LinkCard projectId={projectId} link={l} canReview={canEdit} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 ) : (
                   <p className="rounded-xl border border-dashed border-line p-3 text-xs text-muted">None yet</p>
                 )}

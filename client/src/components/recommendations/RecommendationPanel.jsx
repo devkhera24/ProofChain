@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { recommendationsApi } from "../../api/recommendations.js";
@@ -7,39 +7,25 @@ import { toApiError } from "../../api/client.js";
 import { useProject } from "../../hooks/useProject.js";
 import { useLatestBatch, latestBatchKey } from "../../hooks/useLatestBatch.js";
 import { TRIGGER_LABEL } from "../../lib/recommendations.js";
+import { AnimatePresence, motion } from "motion/react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import PaperCard from "./PaperCard.jsx";
+import Button from "../ui/Button.jsx";
+import { Skeleton } from "../ui/Skeleton.jsx";
+import { useToast } from "../ui/Toast.jsx";
+import { stagger, staggerChild } from "../../lib/motion.js";
 
-function Skeleton() {
+function CardSkeleton() {
   return (
     <div className="space-y-3" aria-hidden="true">
       {Array.from({ length: 5 }, (_, i) => (
-        <div key={i} className="animate-pulse space-y-2 rounded-xl border border-line bg-white p-3 motion-reduce:animate-none">
-          <div className="h-3 w-16 rounded bg-black/10" />
-          <div className="h-4 w-11/12 rounded bg-black/10" />
-          <div className="h-3 w-2/3 rounded bg-black/5" />
-          <div className="h-3 w-full rounded bg-black/5" />
+        <div key={i} className="space-y-2 rounded-xl border border-line bg-white p-3" style={{ opacity: 1 - i * 0.12 }}>
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-3 w-2/3" />
+          <Skeleton className="h-3 w-full" />
         </div>
       ))}
-    </div>
-  );
-}
-
-function Toast({ toast, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 8000);
-    return () => clearTimeout(t);
-  }, [toast, onClose]);
-  return (
-    <div role="status" className="flex items-start gap-2 rounded-lg bg-ink px-3 py-2 text-xs text-white shadow-lg">
-      <span className="flex-1">{toast.text}</span>
-      {toast.undo && (
-        <button type="button" className="font-semibold text-teal-200 underline" onClick={() => (toast.undo(), onClose())}>
-          Undo
-        </button>
-      )}
-      <button type="button" className="opacity-70 hover:opacity-100" onClick={onClose} aria-label="Dismiss">
-        ✕
-      </button>
     </div>
   );
 }
@@ -50,8 +36,7 @@ export default function RecommendationPanel() {
   const { data: project } = useProject(projectId);
   const canAct = ["editor", "owner"].includes(project?.role);
   const { data: batch, isPending, error } = useLatestBatch(projectId);
-  const [toast, setToast] = useState(null);
-  const closeToast = useCallback(() => setToast(null), []);
+  const setToast = useToast();
   const [pendingIndex, setPendingIndex] = useState(null);
   const running = batch?.status === "running";
 
@@ -84,7 +69,7 @@ export default function RecommendationPanel() {
         );
       }
     },
-    onError: (err) => setToast({ text: toApiError(err).message }),
+    onError: (err) => setToast({ text: toApiError(err).message, tone: "error" }),
   });
 
   return (
@@ -93,9 +78,9 @@ export default function RecommendationPanel() {
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-navy">Recommended for you</h2>
           {canAct && (
-            <button type="button" className="btn-ghost px-2 py-1 text-xs" disabled={running || generate.isPending} onClick={() => generate.mutate()}>
-              {running ? "Working…" : "Generate new batch"}
-            </button>
+            <Button size="sm" icon={RefreshCw} loading={running || generate.isPending} onClick={() => generate.mutate()}>
+              {running ? "Working…" : "New batch"}
+            </Button>
           )}
         </div>
         {batch && (
@@ -108,22 +93,29 @@ export default function RecommendationPanel() {
 
       <div className="min-h-0 flex-1 space-y-3 overflow-auto p-3">
         {isPending ? (
-          <Skeleton />
+          <CardSkeleton />
         ) : error ? (
           <p className="text-sm text-red-700">{toApiError(error).message}</p>
         ) : !batch ? (
-          <div className="space-y-2 p-2 text-sm text-muted">
-            <p>No recommendations yet. They're generated automatically once your first source is ready.</p>
+          <div className="flex flex-col items-center px-4 py-10 text-center">
+            <span className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-teal/10 text-teal">
+              <Sparkles size={22} aria-hidden="true" />
+            </span>
+            <p className="font-medium text-ink">No recommendations yet</p>
+            <p className="mt-1 text-sm text-muted">They're generated automatically once your first source is ready.</p>
             {canAct && (
-              <button type="button" className="btn-primary text-xs" onClick={() => generate.mutate()} disabled={generate.isPending}>
+              <Button variant="primary" size="sm" icon={Sparkles} className="mt-4" onClick={() => generate.mutate()} loading={generate.isPending}>
                 Generate now
-              </button>
+              </Button>
             )}
           </div>
         ) : running ? (
           <>
-            <p className="text-xs text-muted">Searching Semantic Scholar and OpenAlex, verifying papers…</p>
-            <Skeleton />
+            <p className="flex items-center gap-2 text-xs text-muted">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-teal motion-reduce:animate-none" aria-hidden="true" />
+              Searching Semantic Scholar and OpenAlex, verifying papers…
+            </p>
+            <CardSkeleton />
           </>
         ) : batch.status === "failed" ? (
           <div className="space-y-2 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">
@@ -137,25 +129,27 @@ export default function RecommendationPanel() {
         ) : !batch.items.length ? (
           <p className="text-sm text-muted">No paper passed verification this time. The Log tab shows what was checked and why it was dropped.</p>
         ) : (
-          batch.items.map((item, index) => (
-            <PaperCard
-              key={`${item.slot}-${item.paper.title}`}
-              projectId={projectId}
-              item={item}
-              canAct={canAct}
-              pending={pendingIndex === index}
-              onAction={(data) => feedback.mutate({ index, ...data })}
-            />
-          ))
+          // Keyed by batch so a new batch staggers in; a replaced card cross-fades in its slot
+          <motion.div key={batch.id} className="space-y-3" variants={stagger(0.07)} initial="initial" animate="animate">
+            {batch.items.map((item, index) => (
+              <motion.div key={item.slot} variants={staggerChild} layout="position">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div key={item.paper.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <PaperCard
+                      projectId={projectId}
+                      item={item}
+                      canAct={canAct}
+                      pending={pendingIndex === index}
+                      onAction={(data) => feedback.mutate({ index, ...data })}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
         {generate.error && toApiError(generate.error).status !== 409 && <p className="text-xs text-red-700">{toApiError(generate.error).message}</p>}
       </div>
-
-      {toast && (
-        <div className="p-3 pt-0">
-          <Toast toast={toast} onClose={closeToast} />
-        </div>
-      )}
     </div>
   );
 }
