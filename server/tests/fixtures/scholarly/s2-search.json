@@ -1,0 +1,30 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "paperId": "s2-fixture-a",
+      "title": "Fixture Paper A: Adjacency Layouts for Toy Graph Queries",
+      "abstract": "A fixture abstract used only in tests.",
+      "year": 2021,
+      "venue": "Fixture Conference",
+      "authors": [{ "name": "Ada Example" }, { "name": "Bo Sample" }],
+      "externalIds": { "DOI": "10.5555/FIXTURE.A" },
+      "citationCount": 12,
+      "openAccessPdf": { "url": "https://example.org/fixture-a.pdf" },
+      "url": "https://www.semanticscholar.org/paper/s2-fixture-a"
+    },
+    {
+      "paperId": "s2-fixture-b",
+      "title": "Fixture Paper B: Caching in Generated Services",
+      "abstract": null,
+      "year": 2019,
+      "venue": "",
+      "authors": [{ "name": "Cy Other" }],
+      "externalIds": { "ArXiv": "1901.00001" },
+      "citationCount": 3,
+      "openAccessPdf": null,
+      "url": null
+    },
+    { "paperId": "s2-no-title", "title": null }
+  ]
+}

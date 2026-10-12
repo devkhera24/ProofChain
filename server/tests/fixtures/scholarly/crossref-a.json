@@ -1,0 +1,13 @@
+{
+  "status": "ok",
+  "message": {
+    "DOI": "10.5555/FIXTURE.A",
+    "title": ["Fixture Paper A: Adjacency Layouts for Toy Graph Queries"],
+    "author": [{ "given": "Ada", "family": "Example" }, { "given": "Bo", "family": "Sample" }],
+    "issued": { "date-parts": [[2021, 6]] },
+    "container-title": ["Fixture Conference"],
+    "abstract": "<jats:p>A fixture abstract used only in tests.</jats:p>",
+    "is-referenced-by-count": 11,
+    "URL": "https://doi.org/10.5555/fixture.a"
+  }
+}

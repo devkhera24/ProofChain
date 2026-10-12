@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "id": "https://openalex.org/W100",
+      "display_name": "Fixture paper A - adjacency layouts for toy graph queries",
+      "doi": "https://doi.org/10.5555/fixture.a",
+      "publication_year": 2021,
+      "authorships": [{ "author": { "display_name": "Ada Example" } }, { "author": { "display_name": "Bo Sample" } }],
+      "primary_location": { "source": { "display_name": "Fixture Conference Proceedings" } },
+      "abstract_inverted_index": { "A": [0], "longer": [1], "fixture": [2], "abstract": [3, 7], "from": [4], "OpenAlex": [5], "(the": [6], "wins).": [8] },
+      "cited_by_count": 15,
+      "best_oa_location": { "pdf_url": null },
+      "open_access": { "oa_url": "https://example.org/oa/fixture-a" }
+    },
+    {
+      "id": "https://openalex.org/W200",
+      "display_name": "Fixture Paper B: Caching in Generated Services",
+      "doi": null,
+      "ids": { "arxiv": "https://arxiv.org/abs/1901.00001" },
+      "publication_year": 2019,
+      "authorships": [{ "author": { "display_name": "Cy Other" } }],
+      "cited_by_count": 2
+    }
+  ]
+}
