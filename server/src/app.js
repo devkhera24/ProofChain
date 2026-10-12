@@ -5,6 +5,7 @@ import { pinoHttp } from "pino-http";
 import { logger } from "./utils/logger.js";
 import { corsOptions } from "./config/cors.js";
 import { healthRouter } from "./routes/health.js";
+import { authRouter } from "./routes/auth.js";
 import { notFound, errorHandler } from "./middleware/errors.js";
 
 export function createApp() {
@@ -18,6 +19,7 @@ export function createApp() {
   app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === "/api/health" } }));
 
   app.use("/api/health", healthRouter);
+  app.use("/api/auth", authRouter);
   // more routers are mounted here in later steps
 
   app.use(notFound);
