@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: proofchain-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: LOG_LEVEL
+        value: info
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AI_MOCK
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_EMBED_MODEL
+        value: gemini-embedding-001
+      - key: EMBED_DIM
+        value: "768"
+      - key: AI_CONCURRENCY
+        value: "2"
+      - key: VECTOR_SEARCH_MODE
+        value: atlas
+      - key: VECTOR_INDEX_NAME
+        value: passage_vector_index
+      - key: S2_API_KEY
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: MAX_UPLOAD_MB
+        value: "15"
