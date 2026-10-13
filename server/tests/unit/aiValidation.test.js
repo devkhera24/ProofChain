@@ -22,7 +22,7 @@ vi.mock("../../src/config/env.js", async (importOriginal) => {
 });
 
 const { generateJson } = await import("../../src/services/ai/llm.js");
-const { withBackoff, toAiError } = await import("../../src/services/ai/common.js");
+const { withBackoff, toAiError, retryAfterMs } = await import("../../src/services/ai/common.js");
 const schema = z.object({ passageId: z.string(), stance: z.enum(["supports", "contradicts", "inconclusive"]) });
 const base = { task: "stance.test", system: "sys", prompt: "PROMPT", schema };
 
@@ -105,10 +105,48 @@ describe("upstream AI errors", () => {
     expect(toAiError(upstream(403), "t", { service: "Gemini", keyVar: "GEMINI_API_KEY" }).message).toBe(
       "The Gemini service rejected the API key. An administrator needs to check GEMINI_API_KEY.",
     );
-    expect(toAiError(upstream(429), "t")).toMatchObject({ status: 503, message: expect.stringMatching(/rate limit/) });
+    expect(toAiError(upstream(429), "t", { service: "Claude" })).toMatchObject({
+      status: 503,
+      message: "The Claude service is rate-limiting requests right now. Please try again in a minute.",
+    });
+    const daily = Object.assign(new Error("Quota exceeded for metric: embed_content_free_tier_requests, limit: 1000 per day"), { status: 429 });
+    expect(toAiError(daily, "t", { service: "Gemini", keyVar: "GEMINI_API_KEY" }).message).toBe(
+      "The Gemini daily quota is used up. Try again tomorrow, or an administrator can upgrade the plan for GEMINI_API_KEY.",
+    );
+    const broke = Object.assign(new Error("Your credit balance is too low to access the Anthropic API."), { status: 400 });
+    expect(toAiError(broke, "t", { service: "Claude", keyVar: "ANTHROPIC_API_KEY" }).message).toMatch(/^The Claude account has no credit left/);
     expect(toAiError(new Error("socket hang up"), "t")).toMatchObject({ status: 503 });
     expect(toAiError(upstream(404), "embed.X", { model: "m-embed", modelVar: "GEMINI_EMBED_MODEL" }).message).toBe(
       'The AI model "m-embed" isn\'t available. An administrator needs to update GEMINI_EMBED_MODEL.',
     );
+  });
+});
+
+describe("provider retry hints", () => {
+  it("reads Anthropic's retry-after header and Gemini's retryDelay", () => {
+    expect(retryAfterMs({ headers: new Headers({ "retry-after": "7" }) })).toBe(7000);
+    expect(retryAfterMs({ headers: { "retry-after": "2" } })).toBe(2000);
+    expect(retryAfterMs({ message: '{"error":{"details":[{"retryDelay":"23s"}]}}' })).toBe(23000);
+    expect(retryAfterMs({ message: "Please retry in 4.5 s." })).toBe(4500);
+    expect(retryAfterMs({ message: "nothing" })).toBeNull();
+  });
+
+  it("waits as long as the provider asks, and doesn't retry a daily quota", async () => {
+    let n = 0;
+    const hinted = async () => {
+      if (++n === 1) throw Object.assign(new Error("slow down"), { status: 429, headers: { "retry-after": "0.2" } });
+      return "ok";
+    };
+    const started = Date.now();
+    expect(await withBackoff(hinted, { base: 1 })).toBe("ok");
+    expect(Date.now() - started).toBeGreaterThanOrEqual(190);
+
+    let m = 0;
+    const daily = async () => {
+      m++;
+      throw Object.assign(new Error("limit: 1000 per day"), { status: 429 });
+    };
+    await expect(withBackoff(daily, { base: 1 })).rejects.toThrow("per day");
+    expect(m).toBe(1);
   });
 });
