@@ -2,7 +2,7 @@ import { InterestProfile } from "../../models/InterestProfile.js";
 import { Project } from "../../models/Project.js";
 import { Passage } from "../../models/Passage.js";
 import { embedOne } from "../ai/embeddings.js";
-import { generateJson } from "../ai/gemini.js";
+import { generateJson } from "../ai/llm.js";
 import * as rulePrompt from "../ai/prompts/feedbackRule.js";
 import { enqueueCoalesced } from "../../jobs/runner.js";
 import { weightedMean } from "../../utils/vectors.js";

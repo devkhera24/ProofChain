@@ -4715,7 +4715,11 @@ design document's "Future scope" (an NLI second opinion for stance, Zotero impor
 | `JWT_SECRET` | **yes** | — | ≥ 32 chars; Render generates it |
 | `JWT_EXPIRES_IN` | no | 7d | Token lifetime |
 | `CORS_ORIGINS` | **yes** (prod) | http://localhost:5173 | Comma-separated; `*` wildcard allowed for Vercel previews |
-| `AI_MOCK` | no | false | `true` = no Gemini calls (tests/dev) |
+| `AI_MOCK` | no | false | `true` = no AI calls (tests/dev) |
+| `AI_PROVIDER` | no | anthropic | Text generation: `anthropic` (Claude) or `gemini` (added after Step 30; see docs/decisions.md) |
+| `ANTHROPIC_API_KEY` | yes unless mock or `AI_PROVIDER=gemini` | — | Anthropic API key |
+| `ANTHROPIC_MODEL` | no | claude-sonnet-5-5 | Claude model for generation |
+| `ANTHROPIC_EFFORT` | no | medium | `low`…`max`: how much Claude thinks |
 | `GEMINI_API_KEY` | yes unless mock | — | Google AI Studio key |
 | `GEMINI_MODEL` | no | gemini-3.8-flash | Generation model |
 | `GEMINI_EMBED_MODEL` | no | gemini-embedding-001 | Embedding model |

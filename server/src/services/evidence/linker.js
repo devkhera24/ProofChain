@@ -2,7 +2,7 @@ import { Claim } from "../../models/Claim.js";
 import { EvidenceLink } from "../../models/EvidenceLink.js";
 import { enqueue } from "../../jobs/runner.js";
 import { embedOne } from "../ai/embeddings.js";
-import { generateJson } from "../ai/gemini.js";
+import { generateJson } from "../ai/llm.js";
 import * as prompt from "../ai/prompts/classifyStance.js";
 import { searchPassages } from "./vectorSearch.js";
 import { recomputeClaimStatus } from "./claimStatus.js";

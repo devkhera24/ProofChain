@@ -3,7 +3,7 @@ import { Passage } from "../../models/Passage.js";
 import { Project } from "../../models/Project.js";
 import { EvidenceLink } from "../../models/EvidenceLink.js";
 import { embedOne } from "../ai/embeddings.js";
-import { generateJson } from "../ai/gemini.js";
+import { generateJson } from "../ai/llm.js";
 import * as extractPrompt from "../ai/prompts/extractClaims.js";
 import { matchQuote } from "../validation/textMatch.js";
 import { createPipelineLog } from "../validation/pipelineLog.js";

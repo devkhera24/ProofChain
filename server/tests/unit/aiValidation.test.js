@@ -1,4 +1,4 @@
-// Exercises the real (non-mock) generateJson path against a fake Gemini client — no network.
+// Exercises the real (non-mock) generateJson path with AI_PROVIDER=gemini against a fake Gemini client — no network.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { z } from "zod";
 
@@ -18,10 +18,11 @@ vi.mock("@google/genai", () => ({
 }));
 vi.mock("../../src/config/env.js", async (importOriginal) => {
   const { env } = await importOriginal();
-  return { env: { ...env, AI_MOCK: false, GEMINI_API_KEY: "test-key" } };
+  return { env: { ...env, AI_MOCK: false, AI_PROVIDER: "gemini", GEMINI_API_KEY: "test-key" } };
 });
 
-const { generateJson, withBackoff, toAiError } = await import("../../src/services/ai/gemini.js");
+const { generateJson } = await import("../../src/services/ai/llm.js");
+const { withBackoff, toAiError } = await import("../../src/services/ai/common.js");
 const schema = z.object({ passageId: z.string(), stance: z.enum(["supports", "contradicts", "inconclusive"]) });
 const base = { task: "stance.test", system: "sys", prompt: "PROMPT", schema };
 
@@ -101,9 +102,13 @@ describe("upstream AI errors", () => {
   });
 
   it("maps key, rate-limit and other failures", () => {
-    expect(toAiError(upstream(403), "t").message).toMatch(/rejected the API key/);
+    expect(toAiError(upstream(403), "t", { service: "Gemini", keyVar: "GEMINI_API_KEY" }).message).toBe(
+      "The Gemini service rejected the API key. An administrator needs to check GEMINI_API_KEY.",
+    );
     expect(toAiError(upstream(429), "t")).toMatchObject({ status: 503, message: expect.stringMatching(/rate limit/) });
     expect(toAiError(new Error("socket hang up"), "t")).toMatchObject({ status: 503 });
-    expect(toAiError(upstream(404), "embed.X", { model: "m-embed", variable: "GEMINI_EMBED_MODEL" }).message).toContain('"m-embed"');
+    expect(toAiError(upstream(404), "embed.X", { model: "m-embed", modelVar: "GEMINI_EMBED_MODEL" }).message).toBe(
+      'The AI model "m-embed" isn\'t available. An administrator needs to update GEMINI_EMBED_MODEL.',
+    );
   });
 });

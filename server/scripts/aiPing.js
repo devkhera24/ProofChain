@@ -1,7 +1,8 @@
-// Live check of the Gemini setup: AI_MOCK=false npm run ai:ping (needs GEMINI_API_KEY in server/.env)
+// Live check of the AI setup: AI_MOCK=false npm run ai:ping
+// Generation uses AI_PROVIDER (Claude by default: ANTHROPIC_API_KEY); embeddings use Gemini (GEMINI_API_KEY).
 import { z } from "zod";
 import { env } from "../src/config/env.js";
-import { generateJson } from "../src/services/ai/gemini.js";
+import { generateJson } from "../src/services/ai/llm.js";
 import { embedOne } from "../src/services/ai/embeddings.js";
 
 if (env.AI_MOCK) {
@@ -17,7 +18,8 @@ try {
     schema: z.object({ ok: z.literal(true), sum: z.number() }),
     check: (d) => (d.sum === 5 ? null : "sum must be 5"),
   });
-  console.log(`✔ ${env.GEMINI_MODEL}: ${JSON.stringify(reply)}`);
+  const model = env.AI_PROVIDER === "gemini" ? env.GEMINI_MODEL : `${env.ANTHROPIC_MODEL} (effort ${env.ANTHROPIC_EFFORT})`;
+  console.log(`✔ ${model}: ${JSON.stringify(reply)}`);
 
   const vector = await embedOne("graph databases", "RETRIEVAL_QUERY");
   const length = Math.sqrt(vector.reduce((s, x) => s + x * x, 0));

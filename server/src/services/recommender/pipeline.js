@@ -1,7 +1,7 @@
 import { RecommendationBatch } from "../../models/RecommendationBatch.js";
 import { Project } from "../../models/Project.js";
 import { Claim } from "../../models/Claim.js";
-import { generateJson } from "../ai/gemini.js";
+import { generateJson } from "../ai/llm.js";
 import * as challengerPrompt from "../ai/prompts/challengers.js";
 import * as rationalePrompt from "../ai/prompts/rationale.js";
 import { matchQuote } from "../validation/textMatch.js";

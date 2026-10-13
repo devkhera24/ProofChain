@@ -21,6 +21,11 @@ const schema = z
     CORS_ORIGINS: z.string().default("http://localhost:5173"),
 
     AI_MOCK: bool("false"),
+    // Text generation (claims, stance, recommendations, chat). Embeddings always use Gemini.
+    AI_PROVIDER: z.enum(["anthropic", "gemini"]).default("anthropic"),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    ANTHROPIC_MODEL: z.string().default("claude-sonnet-5-5"),
+    ANTHROPIC_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium"),
     GEMINI_API_KEY: z.string().optional(),
     GEMINI_MODEL: z.string().default("gemini-3.8-flash"),
     GEMINI_EMBED_MODEL: z.string().default("gemini-embedding-001"),
@@ -37,8 +42,12 @@ const schema = z
     AUTO_RECOMMEND: bool("true"), // first recommendation batch after a project's first source is ready
   })
   .superRefine((v, ctx) => {
-    if (!v.AI_MOCK && !v.GEMINI_API_KEY) {
-      ctx.addIssue({ code: "custom", path: ["GEMINI_API_KEY"], message: "required unless AI_MOCK=true" });
+    if (v.AI_MOCK) return;
+    if (!v.GEMINI_API_KEY) {
+      ctx.addIssue({ code: "custom", path: ["GEMINI_API_KEY"], message: "required unless AI_MOCK=true (embeddings use Gemini)" });
+    }
+    if (v.AI_PROVIDER === "anthropic" && !v.ANTHROPIC_API_KEY) {
+      ctx.addIssue({ code: "custom", path: ["ANTHROPIC_API_KEY"], message: "required when AI_PROVIDER=anthropic unless AI_MOCK=true" });
     }
   });
 

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "../../config/env.js";
-import { callGemini, getClient } from "./gemini.js";
+import { callAi } from "./common.js";
+import { getClient, GEMINI_EMBED_INFO } from "./gemini.js";
 import { normalize } from "../../utils/vectors.js";
 
 const BATCH = 50;
@@ -27,7 +28,7 @@ export async function embedTexts(texts, taskType = "RETRIEVAL_DOCUMENT") {
   const out = [];
   for (let i = 0; i < texts.length; i += BATCH) {
     const chunk = texts.slice(i, i + BATCH).map((t) => t.slice(0, 8000));
-    const res = await callGemini(
+    const res = await callAi(
       `embed.${taskType}`,
       () =>
         getClient().models.embedContent({
@@ -35,7 +36,7 @@ export async function embedTexts(texts, taskType = "RETRIEVAL_DOCUMENT") {
           contents: chunk,
           config: { taskType, outputDimensionality: env.EMBED_DIM },
         }),
-      { model: env.GEMINI_EMBED_MODEL, variable: "GEMINI_EMBED_MODEL" },
+      GEMINI_EMBED_INFO,
     );
     // Reduced-dimension Gemini embeddings are not unit-length: normalise them.
     out.push(...res.embeddings.map((e) => normalize(e.values)));

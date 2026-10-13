@@ -40,7 +40,7 @@ checked before it is stored.
 | Client | React 19, Vite, Tailwind CSS v4, React Router 7, TanStack Query, motion, Cytoscape, socket.io-client | Vercel |
 | API | Node 22, Express 5, Mongoose 8, Zod, Socket.io, pino | Render (free web service) |
 | Data | MongoDB Atlas with Atlas Vector Search (`passage_vector_index`, 768-d cosine) | Atlas M0 |
-| AI | Gemini (generation + `gemini-embedding-001`), JSON output validated with Zod | Google AI Studio |
+| AI | Claude Sonnet 5.5 for generation (Gemini optional), Gemini `gemini-embedding-001` for embeddings; all JSON output validated with Zod | Anthropic API, Google AI Studio |
 | Scholarly | Semantic Scholar, OpenAlex, Crossref, Unpaywall (responses cached in MongoDB) | public APIs |
 
 The server is stateless apart from an in-memory job runner (ingestion, linking, recommendations), and every config
@@ -63,17 +63,17 @@ scripts/  smoke.mjs (production smoke test)
 ## Local setup
 
 Requirements: Node 22 (`nvm use 22`), a MongoDB Atlas cluster (or any MongoDB with `VECTOR_SEARCH_MODE=memory`),
-and a Gemini API key (or `AI_MOCK=true` to run without one).
+an Anthropic API key (generation) and a Gemini API key (embeddings), or `AI_MOCK=true` to run without either.
 
 ```bash
 npm run install:all
-cp server/.env.example server/.env    # fill MONGODB_URI (with /proofchain), JWT_SECRET, GEMINI_API_KEY, CONTACT_EMAIL
+cp server/.env.example server/.env    # fill MONGODB_URI (with /proofchain), JWT_SECRET, ANTHROPIC_API_KEY, GEMINI_API_KEY, CONTACT_EMAIL
 cp client/.env.example client/.env    # VITE_API_URL=http://localhost:4000
 npm --prefix server run db:indexes    # once: model indexes + the Atlas Vector Search index
 npm run dev                           # API on :4000, web on :5173
 ```
 
-Useful checks: `AI_MOCK=false npm --prefix server run ai:ping` (Gemini), `npm --prefix server run scholarly:ping`
+Useful checks: `AI_MOCK=false npm --prefix server run ai:ping` (Claude + Gemini embeddings), `npm --prefix server run scholarly:ping`
 (scholarly APIs), `ALLOW_SEED=true npm --prefix server run seed:demo` (demo account and project).
 
 ## Testing
@@ -105,12 +105,16 @@ See [`docs/deployment.md`](docs/deployment.md): Atlas, API keys, Render (Bluepri
 | `JWT_SECRET` | **yes** | — | ≥ 32 chars; Render generates it |
 | `JWT_EXPIRES_IN` | no | 7d | Token lifetime |
 | `CORS_ORIGINS` | **yes** (prod) | http://localhost:5173 | Comma-separated; `*` wildcard allowed for Vercel previews |
-| `AI_MOCK` | no | false | `true` = no Gemini calls (tests/dev) |
-| `GEMINI_API_KEY` | yes unless mock | — | Google AI Studio key |
-| `GEMINI_MODEL` | no | gemini-3.8-flash | Generation model |
+| `AI_MOCK` | no | false | `true` = no AI calls (tests/dev) |
+| `AI_PROVIDER` | no | anthropic | Text generation: `anthropic` (Claude) or `gemini` |
+| `ANTHROPIC_API_KEY` | yes unless mock or `AI_PROVIDER=gemini` | — | Anthropic API key |
+| `ANTHROPIC_MODEL` | no | claude-sonnet-5-5 | Claude model for generation |
+| `ANTHROPIC_EFFORT` | no | medium | `low`…`max`: how much Claude thinks (speed/cost vs. depth) |
+| `GEMINI_API_KEY` | yes unless mock | — | Google AI Studio key (embeddings; generation too if `AI_PROVIDER=gemini`) |
+| `GEMINI_MODEL` | no | gemini-3.8-flash | Generation model when `AI_PROVIDER=gemini` |
 | `GEMINI_EMBED_MODEL` | no | gemini-embedding-001 | Embedding model |
 | `EMBED_DIM` | no | 768 | Must match the Atlas vector index |
-| `AI_CONCURRENCY` | no | 2 | Parallel Gemini calls |
+| `AI_CONCURRENCY` | no | 2 | Parallel AI calls |
 | `VECTOR_SEARCH_MODE` | no | atlas | `memory` for tests |
 | `VECTOR_INDEX_NAME` | no | passage_vector_index | Atlas index name |
 | `S2_API_KEY` | recommended | — | Semantic Scholar key |
@@ -127,14 +131,14 @@ See [`docs/deployment.md`](docs/deployment.md): Atlas, API keys, Render (Bluepri
 
 ## Known limitations
 
-- **Stance is a model judgement.** Gemini's stance labels can be wrong or miss nuance (scope, conditions). That is
+- **Stance is a model judgement.** The model's stance labels can be wrong or miss nuance (scope, conditions). That is
   why claim status counts only human-confirmed evidence and every AI link is marked as a suggestion.
 - **Coverage of recommendations** is limited to what Semantic Scholar and OpenAlex index; papers that can't be
   verified in a second index are dropped rather than shown. Without `S2_API_KEY`, Semantic Scholar rate-limits
   heavily and the recommender falls back to OpenAlex.
 - **Paywalled and scanned documents**: only open-access full text is ingested (otherwise the abstract only), and
   scanned PDFs have no extractable text (no OCR).
-- **Free-tier hosting**: Render sleeps when idle (first request ~60 s), Gemini's free tier rate-limits bursts, and
+- **Free-tier hosting**: Render sleeps when idle (first request ~60 s), AI providers rate-limit bursts (tune `AI_CONCURRENCY`), and
   the API is a single instance (in-memory jobs and socket rooms; interrupted jobs resume at boot).
 - **Quote matching** tolerates small differences (≥ 0.92 similarity), so a near match is labelled as such rather
   than claimed as exact.

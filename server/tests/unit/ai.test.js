@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
 import { env } from "../../src/config/env.js";
-import { generateJson, generateText } from "../../src/services/ai/gemini.js";
+import { generateJson, generateText } from "../../src/services/ai/llm.js";
 import { embedTexts, embedOne } from "../../src/services/ai/embeddings.js";
 import { formatItems, idsCheck } from "../../src/services/ai/prompts/util.js";
 import { cosine, norm } from "../../src/utils/vectors.js";

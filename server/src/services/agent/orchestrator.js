@@ -1,7 +1,7 @@
 import { ChatMessage } from "../../models/ChatMessage.js";
 import { Source } from "../../models/Source.js";
 import { RecommendationBatch } from "../../models/RecommendationBatch.js";
-import { generateJson, generateText } from "../ai/gemini.js";
+import { generateJson, generateText } from "../ai/llm.js";
 import { embedOne } from "../ai/embeddings.js";
 import * as intentPrompt from "../ai/prompts/intent.js";
 import * as answerPrompt from "../ai/prompts/answer.js";

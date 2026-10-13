@@ -2,7 +2,7 @@ import { Claim } from "../../models/Claim.js";
 import { Passage } from "../../models/Passage.js";
 import { Source } from "../../models/Source.js";
 import { InterestProfile } from "../../models/InterestProfile.js";
-import { generateJson } from "../ai/gemini.js";
+import { generateJson } from "../ai/llm.js";
 import { embedTexts } from "../ai/embeddings.js";
 import * as queryPrompt from "../ai/prompts/searchQueries.js";
 import { ensureProfile, recomputeProfileVector } from "../profile/profileService.js";

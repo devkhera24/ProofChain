@@ -25,7 +25,15 @@ services:
         sync: false
       - key: AI_MOCK
         value: "false"
-      - key: GEMINI_API_KEY
+      - key: AI_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5-5
+      - key: ANTHROPIC_EFFORT
+        value: medium
+      - key: GEMINI_API_KEY # embeddings
         sync: false
       - key: GEMINI_MODEL
         value: gemini-3.8-flash
