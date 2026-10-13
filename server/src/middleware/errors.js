@@ -34,7 +34,8 @@ export function errorHandler(err, req, res, _next) {
 
   if (status >= 500) {
     logger.error({ err, path: req.originalUrl }, "Unhandled error");
-    if (env.isProd) body = { error: "Internal server error" };
+    // AppError messages are written for users; anything unexpected stays hidden in production
+    if (env.isProd && !(err instanceof AppError)) body = { error: "Internal server error" };
   }
   res.status(status).json(body);
 }

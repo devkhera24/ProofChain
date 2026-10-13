@@ -107,7 +107,7 @@ See [`docs/deployment.md`](docs/deployment.md): Atlas, API keys, Render (Bluepri
 | `CORS_ORIGINS` | **yes** (prod) | http://localhost:5173 | Comma-separated; `*` wildcard allowed for Vercel previews |
 | `AI_MOCK` | no | false | `true` = no Gemini calls (tests/dev) |
 | `GEMINI_API_KEY` | yes unless mock | — | Google AI Studio key |
-| `GEMINI_MODEL` | no | gemini-2.5-flash | Generation model |
+| `GEMINI_MODEL` | no | gemini-3.8-flash | Generation model |
 | `GEMINI_EMBED_MODEL` | no | gemini-embedding-001 | Embedding model |
 | `EMBED_DIM` | no | 768 | Must match the Atlas vector index |
 | `AI_CONCURRENCY` | no | 2 | Parallel Gemini calls |

@@ -21,7 +21,7 @@ vi.mock("../../src/config/env.js", async (importOriginal) => {
   return { env: { ...env, AI_MOCK: false, GEMINI_API_KEY: "test-key" } };
 });
 
-const { generateJson, withBackoff } = await import("../../src/services/ai/gemini.js");
+const { generateJson, withBackoff, toAiError } = await import("../../src/services/ai/gemini.js");
 const schema = z.object({ passageId: z.string(), stance: z.enum(["supports", "contradicts", "inconclusive"]) });
 const base = { task: "stance.test", system: "sys", prompt: "PROMPT", schema };
 
@@ -82,5 +82,28 @@ describe("withBackoff", () => {
     };
     await expect(withBackoff(down, { retries: 2, base: 1 })).rejects.toThrow("unavailable");
     expect(n).toBe(3);
+  });
+});
+
+describe("upstream AI errors", () => {
+  beforeEach(() => {
+    replies.length = 0;
+  });
+  const upstream = (status) =>
+    Object.assign(new Error(`{"error":{"code":${status},"message":"raw upstream body","status":"X"}}`), { status });
+
+  it("a retired model (404) becomes a readable 502 naming the variable, not the raw JSON", async () => {
+    replies.push(upstream(404));
+    const err = await generateJson({ ...base, mock: () => ({}) }).catch((e) => e);
+    expect(err.status).toBe(502);
+    expect(err.message).toMatch(/^The AI model ".+" isn't available\. An administrator needs to update GEMINI_MODEL\.$/);
+    expect(err.message).not.toContain("raw upstream body");
+  });
+
+  it("maps key, rate-limit and other failures", () => {
+    expect(toAiError(upstream(403), "t").message).toMatch(/rejected the API key/);
+    expect(toAiError(upstream(429), "t")).toMatchObject({ status: 503, message: expect.stringMatching(/rate limit/) });
+    expect(toAiError(new Error("socket hang up"), "t")).toMatchObject({ status: 503 });
+    expect(toAiError(upstream(404), "embed.X", { model: "m-embed", variable: "GEMINI_EMBED_MODEL" }).message).toContain('"m-embed"');
   });
 });

@@ -22,7 +22,7 @@ const schema = z
 
     AI_MOCK: bool("false"),
     GEMINI_API_KEY: z.string().optional(),
-    GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+    GEMINI_MODEL: z.string().default("gemini-3.8-flash"),
     GEMINI_EMBED_MODEL: z.string().default("gemini-embedding-001"),
     EMBED_DIM: z.coerce.number().int().default(768),
     AI_CONCURRENCY: z.coerce.number().int().min(1).default(2),

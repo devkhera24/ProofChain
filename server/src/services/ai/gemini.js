@@ -25,6 +25,27 @@ export async function withBackoff(fn, { retries = 4, base = 1000, task = "unknow
   }
 }
 
+/**
+ * Gemini/HTTP failure → an AppError with a message people can act on. The upstream body (often raw JSON)
+ * is logged with the task name, never shown to users.
+ */
+export function toAiError(err, task, { model = env.GEMINI_MODEL, variable = "GEMINI_MODEL" } = {}) {
+  if (err instanceof AppError) return err;
+  const status = Number(err?.status ?? err?.code);
+  logger.error({ task, status, err: err?.message?.slice(0, 500) }, "Gemini call failed");
+  if (status === 404) return new AppError(502, `The AI model "${model}" isn't available. An administrator needs to update ${variable}.`, { task });
+  if (status === 401 || status === 403) return new AppError(502, "The AI service rejected the API key. An administrator needs to check GEMINI_API_KEY.", { task });
+  if (status === 429) return new AppError(503, "The AI service is busy right now (rate limit). Please try again in a minute.", { task });
+  if (status === 400) return new AppError(502, "The AI service couldn't process this request.", { task });
+  return new AppError(503, "The AI service is unavailable right now. Please try again shortly.", { task });
+}
+
+/** Every Gemini request: concurrency limit → retry with backoff → readable error. */
+export const callGemini = (task, fn, modelInfo) =>
+  aiLimit(() => withBackoff(fn, { task })).catch((err) => {
+    throw toAiError(err, task, modelInfo);
+  });
+
 const stripFences = (s) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 const formatIssues = (zodError) =>
   zodError.issues
@@ -54,15 +75,12 @@ export async function generateJson({ task, system, prompt, schema, mock, check, 
   let currentPrompt = prompt;
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const res = await aiLimit(() =>
-      withBackoff(() =>
-        getClient().models.generateContent({
-          model: env.GEMINI_MODEL,
-          contents: currentPrompt,
-          config: { systemInstruction: system, temperature, responseMimeType: "application/json" },
-        }),
-        { task },
-      ),
+    const res = await callGemini(task, () =>
+      getClient().models.generateContent({
+        model: env.GEMINI_MODEL,
+        contents: currentPrompt,
+        config: { systemInstruction: system, temperature, responseMimeType: "application/json" },
+      }),
     );
 
     let problem;
@@ -88,15 +106,12 @@ export async function generateJson({ task, system, prompt, schema, mock, check, 
 /** Plain text generation (used rarely; prefer generateJson). */
 export async function generateText({ task = "text", system, prompt, temperature = 0.3, mock }) {
   if (env.AI_MOCK) return mock?.() ?? "Mock response.";
-  const res = await aiLimit(() =>
-    withBackoff(() =>
-      getClient().models.generateContent({
-        model: env.GEMINI_MODEL,
-        contents: prompt,
-        config: { systemInstruction: system, temperature },
-      }),
-      { task },
-    ),
+  const res = await callGemini(task, () =>
+    getClient().models.generateContent({
+      model: env.GEMINI_MODEL,
+      contents: prompt,
+      config: { systemInstruction: system, temperature },
+    }),
   );
   return res.text ?? "";
 }
