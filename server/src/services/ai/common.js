@@ -2,14 +2,21 @@ import pLimit from "p-limit";
 import { env } from "../../config/env.js";
 import { AppError } from "../../utils/errors.js";
 import { logger } from "../../utils/logger.js";
+import { inBackgroundJob } from "../../jobs/context.js";
 
 /** Shared across providers: at most AI_CONCURRENCY model calls at once (protects rate limits). */
 export const aiLimit = pLimit(env.AI_CONCURRENCY);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const RETRYABLE = [429, 500, 502, 503, 504, 529]; // 529 = Anthropic "overloaded"
-const MAX_WAIT_MS = 20_000; // per retry
-const MAX_TOTAL_WAIT_MS = 60_000; // keeps a chat turn well inside the client's 120 s timeout
+/**
+ * How patient retries are. Requests someone is waiting for (chat, adding a claim) give up within a minute so
+ * the page gets an answer; background jobs (ingesting a long PDF) wait out per-minute limits for several minutes.
+ */
+export const RETRY_BUDGETS = {
+  interactive: { retries: 4, maxWaitMs: 20_000, maxTotalWaitMs: 60_000 }, // inside the client's 120 s timeout
+  background: { retries: 12, maxWaitMs: 65_000, maxTotalWaitMs: 6 * 60_000 },
+};
 
 /** How long the provider asked us to wait: Anthropic's `retry-after` header, or Gemini's `retryDelay` in the body. */
 export function retryAfterMs(err) {
@@ -21,7 +28,10 @@ export function retryAfterMs(err) {
 /** A daily quota won't reset by retrying in a few seconds. */
 const isDailyQuota = (err) => /per ?day|daily/i.test(err?.message ?? "");
 
-export async function withBackoff(fn, { retries = 4, base = 1000, task = "unknown" } = {}) {
+export const currentRetryBudget = () => RETRY_BUDGETS[inBackgroundJob() ? "background" : "interactive"];
+
+export async function withBackoff(fn, { base = 1000, task = "unknown", ...budget } = {}) {
+  const { retries, maxWaitMs, maxTotalWaitMs } = { ...RETRY_BUDGETS.interactive, ...budget };
   let waited = 0;
   for (let attempt = 0; ; attempt++) {
     try {
@@ -29,8 +39,8 @@ export async function withBackoff(fn, { retries = 4, base = 1000, task = "unknow
     } catch (err) {
       const status = err?.status ?? err?.code;
       if (!RETRYABLE.includes(Number(status)) || attempt >= retries || isDailyQuota(err)) throw err;
-      const wait = Math.min(retryAfterMs(err) ?? base * 2 ** attempt, MAX_WAIT_MS) + Math.random() * 250;
-      if (waited + wait > MAX_TOTAL_WAIT_MS) throw err;
+      const wait = Math.min(retryAfterMs(err) ?? base * 2 ** attempt, maxWaitMs) + Math.random() * 250;
+      if (waited + wait > maxTotalWaitMs) throw err;
       waited += wait;
       logger.warn({ task, status, attempt, wait: Math.round(wait) }, "AI call failed, backing off");
       await sleep(wait);
@@ -59,7 +69,9 @@ export function toAiError(err, task, info = {}) {
 }
 
 /** Every model request: concurrency limit → retry with backoff → readable error. */
-export const callAi = (task, fn, info) =>
-  aiLimit(() => withBackoff(fn, { task })).catch((err) => {
+export const callAi = (task, fn, info) => {
+  const budget = currentRetryBudget(); // read before queueing: the job's async context is certain here
+  return aiLimit(() => withBackoff(fn, { task, ...budget })).catch((err) => {
     throw toAiError(err, task, info);
   });
+};

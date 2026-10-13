@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { logger } from "../utils/logger.js";
+import { jobContext } from "./context.js";
 
 const limit = pLimit(2);
 const running = new Map(); // key → promise, prevents duplicate jobs for the same key
@@ -10,7 +11,7 @@ export function enqueue(key, fn) {
   const p = limit(async () => {
     const started = Date.now();
     try {
-      await fn();
+      await jobContext.run({ key }, fn);
       logger.info({ key, ms: Date.now() - started }, "job done");
     } catch (err) {
       logger.error({ err, key }, "job failed");

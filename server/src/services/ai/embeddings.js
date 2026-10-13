@@ -4,7 +4,9 @@ import { callAi } from "./common.js";
 import { getClient, GEMINI_EMBED_INFO } from "./gemini.js";
 import { normalize } from "../../utils/vectors.js";
 
-const BATCH = 50;
+// Small requests: one big batch can exceed a free-tier tokens-per-minute limit on its own
+const BATCH = 20;
+const BATCH_CHARS = 24_000; // ≈ 6k tokens
 
 /** Deterministic pseudo-embedding for tests: same text → same vector; shared words → similar vectors. */
 function mockEmbed(text) {
@@ -14,6 +16,24 @@ function mockEmbed(text) {
     for (let k = 0; k < 4; k++) v[h.readUInt16BE(k * 2) % env.EMBED_DIM] += 1;
   }
   return normalize(v);
+}
+
+/** Split texts into requests of at most BATCH texts and about BATCH_CHARS characters (a long text goes alone). */
+export function batchTexts(texts, { max = BATCH, maxChars = BATCH_CHARS } = {}) {
+  const batches = [];
+  let current = [];
+  let chars = 0;
+  for (const t of texts) {
+    if (current.length && (current.length >= max || chars + t.length > maxChars)) {
+      batches.push(current);
+      current = [];
+      chars = 0;
+    }
+    current.push(t);
+    chars += t.length;
+  }
+  if (current.length) batches.push(current);
+  return batches;
 }
 
 /**
@@ -26,8 +46,7 @@ export async function embedTexts(texts, taskType = "RETRIEVAL_DOCUMENT") {
   if (env.AI_MOCK) return texts.map(mockEmbed);
 
   const out = [];
-  for (let i = 0; i < texts.length; i += BATCH) {
-    const chunk = texts.slice(i, i + BATCH).map((t) => t.slice(0, 8000));
+  for (const chunk of batchTexts(texts.map((t) => t.slice(0, 8000)))) {
     const res = await callAi(
       `embed.${taskType}`,
       () =>

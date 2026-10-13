@@ -22,7 +22,9 @@ vi.mock("../../src/config/env.js", async (importOriginal) => {
 });
 
 const { generateJson } = await import("../../src/services/ai/llm.js");
-const { withBackoff, toAiError, retryAfterMs } = await import("../../src/services/ai/common.js");
+const { withBackoff, toAiError, retryAfterMs, currentRetryBudget, RETRY_BUDGETS } = await import("../../src/services/ai/common.js");
+const { batchTexts } = await import("../../src/services/ai/embeddings.js");
+const { jobContext } = await import("../../src/jobs/context.js");
 const schema = z.object({ passageId: z.string(), stance: z.enum(["supports", "contradicts", "inconclusive"]) });
 const base = { task: "stance.test", system: "sys", prompt: "PROMPT", schema };
 
@@ -148,5 +150,40 @@ describe("provider retry hints", () => {
     };
     await expect(withBackoff(daily, { base: 1 })).rejects.toThrow("per day");
     expect(m).toBe(1);
+  });
+});
+
+describe("retry budgets", () => {
+  it("background jobs wait longer than requests someone is waiting for", () => {
+    expect(RETRY_BUDGETS.background.maxTotalWaitMs).toBeGreaterThan(RETRY_BUDGETS.interactive.maxTotalWaitMs);
+    expect(RETRY_BUDGETS.interactive.maxTotalWaitMs).toBeLessThanOrEqual(60_000); // chat has a 120 s timeout
+  });
+
+  it("picks the background budget inside a job (also across awaits) and the interactive one elsewhere", async () => {
+    expect(currentRetryBudget()).toBe(RETRY_BUDGETS.interactive);
+    const inJob = await jobContext.run({ key: "ingest:x" }, async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      return currentRetryBudget();
+    });
+    expect(inJob).toBe(RETRY_BUDGETS.background);
+  });
+
+  it("stops retrying once the total wait budget would be exceeded", async () => {
+    let n = 0;
+    const limited = async () => {
+      n++;
+      throw Object.assign(new Error("limited"), { status: 429, headers: { "retry-after": "61" } });
+    };
+    await expect(withBackoff(limited, { maxTotalWaitMs: 1000 })).rejects.toThrow("limited");
+    expect(n).toBe(1); // a 61 s hint (capped to 20 s) doesn't fit in 1 s, so no pointless retry
+  });
+});
+
+describe("embedding batches", () => {
+  it("splits by count and by characters; an oversized text goes alone", () => {
+    expect(batchTexts(["a", "b", "c"], { max: 2 })).toEqual([["a", "b"], ["c"]]);
+    expect(batchTexts(["aaaa", "bbbb", "cc"], { maxChars: 6 })).toEqual([["aaaa"], ["bbbb", "cc"]]);
+    expect(batchTexts(["x".repeat(10), "y"], { maxChars: 5 })).toEqual([["x".repeat(10)], ["y"]]);
+    expect(batchTexts([])).toEqual([]);
   });
 });
