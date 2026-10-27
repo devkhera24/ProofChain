@@ -143,4 +143,8 @@ See [`docs/deployment.md`](docs/deployment.md): Atlas, API keys, Render (Bluepri
 - **Quote matching** tolerates small differences (≥ 0.92 similarity), so a near match is labelled as such rather
   than claimed as exact.
 - **Recommendations are per user**: each member gets their own batches and interest profile.
+- **API key error**: User might face API key error due to rate limit or api key expired
 
+## Demo video link
+
+https://drive.google.com/file/d/1SegQ6AZ-hXFhH0a0lfBCeK8JAH4AJ47p/view?usp=drive_link
